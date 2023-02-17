@@ -135,9 +135,11 @@ class Plotter(object):
         
         # gen gp file
         print("", file=self.out)
-        print("set title \'%s:%s:%s\'" % (media, bench, iomode), file=self.out)
-        print("set xlabel \'# cores\'", file=self.out)
+        # print("set title \'%s:%s:%s\'" % (media, bench, iomode), file=self.out)
+        print("set title \'%s\'" % (bench), file=self.out)
+        print("set xlabel \'# Threads\'", file=self.out)
         print("set ylabel \'%s\'" % "M ops/sec", file=self.out)
+        print("set xtics 7", file=self.out)
 
         fs = fs_list[0]
         print("plot [0:][0:] \'%s\' using 1:2 title \'%s\' %s"

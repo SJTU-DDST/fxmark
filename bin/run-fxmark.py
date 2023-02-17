@@ -24,10 +24,10 @@ def catch_ctrl_C(sig, frame):
 
 class Runner(object):
     # media path
-    LOOPDEV = "/dev/loopX"
-    NVMEDEV = "/dev/nvme0n1pX"
-    HDDDEV  = "/dev/sdX"
-    SSDDEV  = "/dev/sdY"
+    LOOPDEV = "/dev/loop7"
+    NVMEDEV = "/dev/pmem1.1"
+    HDDDEV  = "/dev/pmem1.1"
+    SSDDEV  = "/dev/pmem1.1"
 
     # test core granularity
     CORE_FINE_GRAIN   = 0
@@ -46,44 +46,49 @@ class Runner(object):
 
         # bench config
         self.DISK_SIZE     = "32G"
-        self.DURATION      = 30 # seconds
+        self.DURATION      = 1 # 30 seconds
         self.DIRECTIOS     = ["bufferedio", "directio"]  # enable directio except tmpfs -> nodirectio 
-        self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
-#        self.FS_TYPES      = [
-        self.FS_TYPES      = ["tmpfs",
-                              "ext4", "ext4_no_jnl",
-                              "xfs",
-                              "btrfs", "f2fs",
+        # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
+        self.MEDIA_TYPES   = ["nvme", "mem"]
+        self.FS_TYPES      = [
+                            "NOVA",
+                            "EulerFS-S",
+                            "EulerFS", 
+                            "EXT4-dax"
+        # self.FS_TYPES      = ["tmpfs",
+        #                       "EXT4-dax", "ext4_no_jnl",
+                            #   "xfs",
+                            #   "btrfs", "f2fs",
                               # "jfs", "reiserfs", "ext2", "ext3",
         ]
         self.BENCH_TYPES   = [
             # write/write
-            "DWAL",
+            # "DWAL",
             "DWOL",
             "DWOM",
-            "DWSL",
-            "MWRL",
-            "MWRM",
-            "MWCL",
-            "MWCM",
-            "MWUM",
-            "MWUL",
-            "DWTL",
+            # "DWSL",
+            # "MWRL",
+            # "MWRM",
+            # "MWCL",
+            # "MWCM",
+            # "MWUM",
+            # "MWUL",
+            # "DWTL",
 
             # filebench
-            "filebench_varmail",
-            "filebench_oltp",
-            "filebench_fileserver",
+            # "filebench_varmail",
+            # "filebench_oltp",
+            # "filebench_fileserver",
 
             # dbench
-            "dbench_client",
+            # "dbench_client",
 
             # read/read
-            "MRPL",
-            "MRPM",
-            "MRPH",
-            "MRDM",
-            "MRDL",
+            # "MRPL",
+            # "MRPM",
+            # "MRPH",
+            # "MRDM",
+            # "MRDL",
             "DRBH",
             "DRBM",
             "DRBL",
@@ -111,18 +116,21 @@ class Runner(object):
             "tmpfs":self.mount_tmpfs,
             "ext2":self.mount_anyfs,
             "ext3":self.mount_anyfs,
-            "ext4":self.mount_anyfs,
+            "EXT4-dax":self.mount_anyfs,
             "ext4_no_jnl":self.mount_ext4_no_jnl,
             "xfs":self.mount_anyfs,
             "btrfs":self.mount_anyfs,
             "f2fs":self.mount_anyfs,
             "jfs":self.mount_anyfs,
             "reiserfs":self.mount_anyfs,
+            "EulerFS": self.mount_eulerfs_plain,
+            "EulerFS-S": self.mount_eulerfs_master,
+            "NOVA":self.mount_NOVA,
         }
         self.HOWTO_MKFS = {
             "ext2":"-F",
             "ext3":"-F",
-            "ext4":"-F",
+            "EXT4-dax":"-F",
             "ext4_no_jnl":"-F",
             "xfs":"-f",
             "btrfs":"-f",
@@ -143,7 +151,7 @@ class Runner(object):
         self.dev_null    = open("/dev/null", "a") if not self.DEBUG_OUT else None
         self.npcpu       = cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP
         self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL
-        self.ncores      = self.get_ncores()
+        self.ncores      = [1,7,14,21,28,35,42,49,56] # [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
         self.test_root   = os.path.normpath(
             os.path.join(CUR_DIR, self.ROOT_NAME))
         self.fxmark_path = os.path.normpath(
@@ -242,6 +250,7 @@ class Runner(object):
                         os.path.normpath(
                             os.path.join(CUR_DIR, "set-cpus")), 
                         ncores])
+        print(cmd)
         self.exec_cmd(cmd, self.dev_null)
 
     def add_bg_worker_if_needed(self, bench, ncore):
@@ -318,12 +327,18 @@ class Runner(object):
         p = self.exec_cmd("sudo mount -t tmpfs -o mode=0777,size="
                           + self.DISK_SIZE + " none " + mnt_path,
                           self.dev_null)
+        print("sudo mount -t tmpfs -o mode=0777,size="
+                          + self.DISK_SIZE + " none " + mnt_path,
+                          self.dev_null)
         return p.returncode == 0
 
     def mount_anyfs(self, media, fs, mnt_path):
         (rc, dev_path) = self.init_media(media)
         if not rc:
             return False
+        
+        if fs == "EXT4-dax":
+            fs = "ext4"
 
         p = self.exec_cmd("sudo mkfs." + fs
                           + " " + self.HOWTO_MKFS.get(fs, "")
@@ -332,6 +347,64 @@ class Runner(object):
         if p.returncode is not 0:
             return False
         p = self.exec_cmd(' '.join(["sudo mount -t", fs,
+                                    dev_path, mnt_path]),
+                          self.dev_null)
+        if p.returncode is not 0:
+            return False
+        p = self.exec_cmd("sudo chmod 777 " + mnt_path,
+                          self.dev_null)
+        if p.returncode is not 0:
+            return False
+        return True
+
+    def mount_eulerfs_plain(self, media, fs, mnt_path):
+        (rc, dev_path) = self.init_media(media)
+        if not rc:
+            return False
+
+        p = self.exec_cmd("sudo rmmod eulerfs", self.dev_null)
+        p = self.exec_cmd("sudo insmod /home/congyong/eulerfs-plain.ko", self.dev_null)
+        if p.returncode is not 0:
+            return False
+
+        p = self.exec_cmd(' '.join(["sudo mount -t eulerfs", "-o init",
+                                    dev_path, mnt_path]),
+                          self.dev_null)
+        if p.returncode is not 0:
+            return False
+        p = self.exec_cmd("sudo chmod 777 " + mnt_path,
+                          self.dev_null)
+        if p.returncode is not 0:
+            return False
+        return True
+    
+    def mount_eulerfs_master(self, media, fs, mnt_path):
+        (rc, dev_path) = self.init_media(media)
+        if not rc:
+            return False
+
+        p = self.exec_cmd("sudo rmmod eulerfs", self.dev_null)
+        p = self.exec_cmd("sudo insmod /home/congyong/eulerfs/eulerfs.ko", self.dev_null)
+        if p.returncode is not 0:
+            return False
+
+        p = self.exec_cmd(' '.join(["sudo mount -t eulerfs", "-o init",
+                                    dev_path, mnt_path]),
+                          self.dev_null)
+        if p.returncode is not 0:
+            return False
+        p = self.exec_cmd("sudo chmod 777 " + mnt_path,
+                          self.dev_null)
+        if p.returncode is not 0:
+            return False
+        return True
+    
+    def mount_NOVA(self, media, fs, mnt_path):
+        (rc, dev_path) = self.init_media(media)
+        if not rc:
+            return False
+
+        p = self.exec_cmd(' '.join(["sudo mount -t", fs, "-o init",
                                     dev_path, mnt_path]),
                           self.dev_null)
         if p.returncode is not 0:
@@ -391,8 +464,9 @@ class Runner(object):
                 for media in self.MEDIA_TYPES:
                     for dio in self.DIRECTIOS:
                         for fs in self.FS_TYPES:
-                            if fs == "tmpfs" and media != "mem":
-                                continue
+                            if fs == "tmpfs" and media != "mem": # IMPORTANT!
+                                media = "mem"
+                                # continue
                             mount_fn = self.HOWTO_MOUNT.get(fs, None)
                             if not mount_fn:
                                 continue
@@ -421,8 +495,8 @@ class Runner(object):
         directio = '1' if dio is "directio" else '0'
 
         if directio is '1':
-            if fs is "tmpfs": 
-                print("# INFO: DirectIO under tmpfs disabled by default")
+            if fs is "tmpfs" or "EulerFS" in fs:
+                print("# INFO: DirectIO under tmpfs & eulerfs disabled by default")
                 directio='0';
             else: 
                 print("# INFO: DirectIO Enabled")
@@ -452,6 +526,7 @@ class Runner(object):
 
     def run(self):
         try:
+            print("## TRY")
             cnt = -1
             self.log_start()
             for (cnt, (media, fs, bench, ncore, dio)) in enumerate(self.gen_config()):
@@ -461,7 +536,6 @@ class Runner(object):
                 if self.DRYRUN:
                     self.log("## %s:%s:%s:%s:%s" % (media, fs, bench, nfg, dio))
                     continue
-
                 self.prepre_work(ncore)
                 if not self.mount(media, fs, self.test_root):
                     self.log("# Fail to mount %s on %s." % (fs, media))
@@ -482,17 +556,17 @@ def confirm_media_path():
     print("%" * 80)
     print("%% WARNING! WARNING! WARNING! WARNING! WARNING!")
     print("%" * 80)
-    yn = input("All data in %s, %s, %s and %s will be deleted. Is it ok? [Y,N]: "
-            % (Runner.HDDDEV, Runner.SSDDEV, Runner.NVMEDEV, Runner.LOOPDEV))
-    if yn != "Y":
-        print("Please, check Runner.LOOPDEV and Runner.NVMEDEV")
-        exit(1)
-    yn = input("Are you sure? [Y,N]: ")
-    if yn != "Y":
-        print("Please, check Runner.LOOPDEV and Runner.NVMEDEV")
-        exit(1)
-    print("%" * 80)
-    print("\n\n")
+    # yn = input("All data in %s, %s, %s and %s will be deleted. Is it ok? [Y,N]: "
+    #         % (Runner.HDDDEV, Runner.SSDDEV, Runner.NVMEDEV, Runner.LOOPDEV))
+    # if yn != "Y":
+    #     print("Please, check Runner.LOOPDEV and Runner.NVMEDEV")
+    #     exit(1)
+    # yn = input("Are you sure? [Y,N]: ")
+    # if yn != "Y":
+    #     print("Please, check Runner.LOOPDEV and Runner.NVMEDEV")
+    #     exit(1)
+    # print("%" * 80)
+    # print("\n\n")
 
 if __name__ == "__main__":
     # config parameters
@@ -517,7 +591,10 @@ if __name__ == "__main__":
     run_config = [
         (Runner.CORE_FINE_GRAIN,
          PerfMon.LEVEL_LOW,
-         ("mem", "*", "DWOL", "80", "directio")),
+        #  ("mem", "tmpfs", "MWCM", "*", "directio")),
+        #  ("mem", "*", "DWOL", "80", "directio")),
+        # ("nvme", "*", "*", "*", "directio")),
+        ("nvme", "*", "*", "*", "directio")),# NOVA requires directio, EulerFS-S requires bufferedio
         # ("mem", "tmpfs", "filebench_varmail", "32", "directio")),
         # (Runner.CORE_COARSE_GRAIN,
         #  PerfMon.LEVEL_PERF_RECORD,
