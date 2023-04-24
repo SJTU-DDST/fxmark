@@ -51,9 +51,9 @@ class Runner(object):
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
         self.FS_TYPES      = [
-                            "NOVA",
+                            # "NOVA",
                             "EulerFS-S",
-                            "EulerFS", 
+                            # "EulerFS", 
                             "EXT4-dax"
         # self.FS_TYPES      = ["tmpfs",
         #                       "EXT4-dax", "ext4_no_jnl",
@@ -64,8 +64,9 @@ class Runner(object):
         self.BENCH_TYPES   = [
             # write/write
             # "DWAL",
-            "DWOL",
-            "DWOM",
+            # "DWOL",
+            # "DWOM",
+            "DWOH",
             # "DWSL",
             # "MWRL",
             # "MWRM",
@@ -89,9 +90,9 @@ class Runner(object):
             # "MRPH",
             # "MRDM",
             # "MRDL",
-            "DRBH",
-            "DRBM",
-            "DRBL",
+            # "DRBH",
+            # "DRBM",
+            # "DRBL",
 
             # read/write
             # "MRPM_bg",
@@ -594,7 +595,7 @@ if __name__ == "__main__":
         #  ("mem", "tmpfs", "MWCM", "*", "directio")),
         #  ("mem", "*", "DWOL", "80", "directio")),
         # ("nvme", "*", "*", "*", "directio")),
-        ("nvme", "*", "*", "*", "directio")),# NOVA requires directio, EulerFS-S requires bufferedio
+        ("nvme", "*", "*", "*", "bufferedio")),# NOVA requires directio, EulerFS-S requires bufferedio
         # ("mem", "tmpfs", "filebench_varmail", "32", "directio")),
         # (Runner.CORE_COARSE_GRAIN,
         #  PerfMon.LEVEL_PERF_RECORD,

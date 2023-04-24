@@ -33,6 +33,7 @@ extern struct bench_operations n_blk_wrt_ops;
 extern struct bench_operations n_dir_ins_ops;
 extern struct bench_operations n_jnl_cmt_ops;
 extern struct bench_operations n_mtime_upt_ops;
+extern struct bench_operations n_fallback_ops;
 extern struct bench_operations n_file_rename_ops;
 extern struct bench_operations n_file_rd_ops;
 extern struct bench_operations n_file_rd_bg_ops;

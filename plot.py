@@ -14,7 +14,7 @@ markers = ['H', '^', '>', 'D', 'o', 's']
 # plt.rcParams['font.sans-serif'] = 'DehaVu Sans'
 plt.rcParams['font.size'] = 14
 
-workloads = ['DRBH', 'DRBL', 'DRBM', 'DWOL', 'DWOM']
+workloads = ['DRBH', 'DRBL', 'DRBM', 'DWOL', 'DWOM', 'DWOH']
 fss = ['EulerFS-S', 'EulerFS', 'EXT4-dax']
 t = [1, 7, 14, 21, 28, 35, 42, 49, 56]
 
