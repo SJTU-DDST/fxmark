@@ -54,7 +54,7 @@ class Runner(object):
                             # "NOVA",
                             "EulerFS-S",
                             # "EulerFS", 
-                            # "EXT4-dax"
+                            "EXT4-dax"
         # self.FS_TYPES      = ["tmpfs",
         #                       "EXT4-dax", "ext4_no_jnl",
                             #   "xfs",
@@ -80,7 +80,7 @@ class Runner(object):
             # "DWTL",
 
             # filebench
-            "filebench_varmail",
+            # "filebench_varmail",
             # "filebench_oltp",
             # "filebench_fileserver",
 
@@ -104,6 +104,9 @@ class Runner(object):
             # "DRBH_bg",
             # "DRBL_bg",
             # "MRDL_bg",
+
+            # real world
+            "silversearcher_kernel",
         ]
         self.BENCH_BG_SFX   = "_bg"
 
@@ -113,6 +116,7 @@ class Runner(object):
         self.FXMARK_NAME    = "fxmark"
         self.FILEBENCH_NAME = "run-filebench.py"
         self.DBENCH_NAME    = "run-dbench.py"
+        self.SILVERSEARCHER_NAME = "run-silversearcher.py"
         self.PERFMN_NAME    = "perfmon.py"
 
         # fs config
@@ -154,8 +158,8 @@ class Runner(object):
         self.redirect    = subprocess.PIPE if not self.DEBUG_OUT else None
         self.dev_null    = open("/dev/null", "a") if not self.DEBUG_OUT else None
         self.npcpu       = cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP
-        self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL
-        self.ncores      = [1,7,14,21,28,35,42,49,56] # [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
+        self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL#,14,21,28,35,42,49,56
+        self.ncores      = [1,2,4,6,8,10,12,14,16] # [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
         self.test_root   = os.path.normpath(
             os.path.join(CUR_DIR, self.ROOT_NAME))
         self.fxmark_path = os.path.normpath(
@@ -164,6 +168,8 @@ class Runner(object):
             os.path.join(CUR_DIR, self.FILEBENCH_NAME))
         self.dbench_path = os.path.normpath(
             os.path.join(CUR_DIR, self.DBENCH_NAME))
+        self.silversearcher_path = os.path.normpath(
+            os.path.join(CUR_DIR, self.SILVERSEARCHER_NAME))
         self.tmp_path = os.path.normpath(
             os.path.join(CUR_DIR, ".tmp"))
         self.disk_path = os.path.normpath(
@@ -499,6 +505,8 @@ class Runner(object):
             return (self.filebench_path, bench[len("filebench_"):])
         if bench.startswith("dbench_"):
             return (self.dbench_path, bench[len("dbench_"):])
+        if bench.startswith("silversearcher_"):
+            return (self.silversearcher_path, bench[len("silversearcher_"):])
         return (self.fxmark_path, bench)
 
     def fxmark(self, media, fs, bench, ncore, nfg, nbg, dio):
