@@ -58,9 +58,9 @@ define process name=seqwrite,instances=1
   }
 }
 
-echo  "Five Stream Write Version 3.0 personality successfully loaded"
-usage "Usage: set \$dir=<dir>"
-usage "       set \$filesize=<size>    defaults to $filesize"
-usage "       set \$nthreads=<value>   defaults to $nthreads"
-usage "       set \$iosize=<value> defaults to $iosize"
-usage "       run runtime (e.g. run 60)"
+#echo  "Five Stream Write Version 3.0 personality successfully loaded"
+#usage "#usage: set \$dir=<dir>"
+#usage "       set \$filesize=<size>    defaults to $filesize"
+#usage "       set \$nthreads=<value>   defaults to $nthreads"
+#usage "       set \$iosize=<value> defaults to $iosize"
+#usage "       run runtime (e.g. run 60)"

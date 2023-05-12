@@ -85,11 +85,15 @@ class FileBench(object):
         work_sec = 0
         for item in self.perf_msg.split(','):
             vk = item.strip().split()
-            if len(vk) == 2:
-                if vk[1] == "ops":
-                    work = vk[0]
-                elif vk[1] == "ops/s":
-                    work_sec = vk[0]
+            # if len(vk) == 2:
+            #     if vk[1] == "ops":
+            #         work = vk[0]
+            #     elif vk[1] == "ops/s":
+            #         work_sec = vk[0]
+            if vk[1] == "ops":
+                work = vk[0]
+            if vk[3] == "ops/s":
+                work_sec = vk[2]
         profile_name = ""
         profile_data = ""
         try:
@@ -125,9 +129,9 @@ class FileBench(object):
             self._append_to_config("set $nshadows=%d"   % (self.ncore * 2))
             self._append_to_config("set $ndbwriters=%d" % (min(self.ncore, 63)))
         elif self.workload == "fileserver":
-            self._append_to_config("set $nthreads=%d"   % (self.ncore * 2))
+            self._append_to_config("set $nthreads=%d"   % (self.ncore)) #  * 2
         elif self.workload == "varmail":
-            self._append_to_config("set $nthreads=%d"   % (self.ncore * 2))
+            self._append_to_config("set $nthreads=%d"   % (self.ncore)) #  * 2
         else:
             return False
         # config target dir and benchmark time
@@ -139,6 +143,9 @@ class FileBench(object):
         self._exec_cmd("echo \'%s\' >> %s" % (config_str, self.config.name)).wait()
 
     def _exec_cmd(self, cmd, out=None):
+        # print(cmd)
+        # if "filebench" in cmd:
+        #     cmd = ":"
         p = subprocess.Popen(cmd, shell=True, stdout=out, stderr=out)
         return p
 
@@ -147,6 +154,7 @@ if __name__ == "__main__":
     parser.add_option("--type", help="workload name")
     parser.add_option("--ncore", help="number of core")
     parser.add_option("--nbg", help="not used")
+    parser.add_option("--directio", help="not used")
     parser.add_option("--duration", help="benchmark time in seconds")
     parser.add_option("--root", help="benchmark root directory")
     parser.add_option("--profbegin", help="profile begin command")

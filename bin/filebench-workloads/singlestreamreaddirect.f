@@ -38,10 +38,10 @@ define process name=seqread,instances=1
   }
 }
 
-echo  "Single Stream Direct Read Version 3.0 personality successfully loaded"
-usage "Usage: set \$dir=<dir>"
-usage "       set \$filesize=<size>    defaults to $filesize"
-usage "       set \$nthreads=<value>   defaults to $nthreads"
-usage "       set \$iosize=<value> defaults to $iosize"
-usage "       run runtime (e.g. run 60)"
-usage "This workload needs $filesize of disk space by default"
+#echo  "Single Stream Direct Read Version 3.0 personality successfully loaded"
+#usage "#usage: set \$dir=<dir>"
+#usage "       set \$filesize=<size>    defaults to $filesize"
+#usage "       set \$nthreads=<value>   defaults to $nthreads"
+#usage "       set \$iosize=<value> defaults to $iosize"
+#usage "       run runtime (e.g. run 60)"
+#usage "This workload needs $filesize of disk space by default"

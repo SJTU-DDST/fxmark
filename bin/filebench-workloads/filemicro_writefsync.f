@@ -41,16 +41,16 @@ define process name=filecreater,instances=1
   thread name=filecreaterthread,memsize=10m,instances=$nthreads
   {
     flowop appendfile name=append-file,filename=bigfile,iosize=$iosize,iters=$iters
-    flowop fsync name=sync-file
+    #flowop fsync name=sync-file
     flowop finishoncount name=finish,value=$count
   }
 }
 
-echo  "FileMicro-WriteFsync Version 2.1 personality successfully loaded"
-usage "Usage: set \$dir=<dir>"
-usage "       set \$count=<value>    defaults to $count"
-usage "       set \$iosize=<size>    defaults to $iosize"
-usage "       set \$iters=<value>    defaults to $iters"
-usage "       set \$nthreads=<value> defaults to $nthreads"
-usage " "
-usage "       run runtime (e.g. run 60)"
+#echo  "FileMicro-WriteFsync Version 2.1 personality successfully loaded"
+#usage "#usage: set \$dir=<dir>"
+#usage "       set \$count=<value>    defaults to $count"
+#usage "       set \$iosize=<size>    defaults to $iosize"
+#usage "       set \$iters=<value>    defaults to $iters"
+#usage "       set \$nthreads=<value> defaults to $nthreads"
+#usage " "
+#usage "       run runtime (e.g. run 60)"

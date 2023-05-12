@@ -25,9 +25,9 @@ def catch_ctrl_C(sig, frame):
 class Runner(object):
     # media path
     LOOPDEV = "/dev/loop7"
-    NVMEDEV = "/dev/pmem1.1"
-    HDDDEV  = "/dev/pmem1.1"
-    SSDDEV  = "/dev/pmem1.1"
+    NVMEDEV = "/dev/pmem2.1"
+    HDDDEV  = "/dev/pmem2.1"
+    SSDDEV  = "/dev/pmem2.1"
 
     # test core granularity
     CORE_FINE_GRAIN   = 0
@@ -54,7 +54,7 @@ class Runner(object):
                             # "NOVA",
                             "EulerFS-S",
                             # "EulerFS", 
-                            "EXT4-dax"
+                            # "EXT4-dax"
         # self.FS_TYPES      = ["tmpfs",
         #                       "EXT4-dax", "ext4_no_jnl",
                             #   "xfs",
@@ -66,10 +66,10 @@ class Runner(object):
             # "DWAL",
             # "DWOL",
             # "DWOM",
-            "DWOH",
-            "MMAPL",
-            "MMAPM",
-            "MMAPH",
+            # "DWOH",
+            # "MMAPL",
+            # "MMAPM",
+            # "MMAPH",
             # "DWSL",
             # "MWRL",
             # "MWRM",
@@ -80,7 +80,7 @@ class Runner(object):
             # "DWTL",
 
             # filebench
-            # "filebench_varmail",
+            "filebench_varmail",
             # "filebench_oltp",
             # "filebench_fileserver",
 
@@ -229,7 +229,17 @@ class Runner(object):
         return ncores
 
     def exec_cmd(self, cmd, out=None):
+        # print(cmd + ";")
+        # out = subprocess.PIPE
+        # if "run-filebench.py" in cmd:
+        #     cmd = ":"
         p = subprocess.Popen(cmd, shell=True, stdout=out, stderr=out)
+        
+        # with open("test.log", "wb") as f:
+        #     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #     for c in iter(lambda: p.stdout.read(1), b""):
+        #         sys.stdout.buffer.write(c)
+        #         f.buffer.write(c)
         p.wait()
         return p
 
@@ -254,7 +264,6 @@ class Runner(object):
                         os.path.normpath(
                             os.path.join(CUR_DIR, "set-cpus")), 
                         ncores])
-        print(cmd)
         self.exec_cmd(cmd, self.dev_null)
 
     def add_bg_worker_if_needed(self, bench, ncore):
@@ -477,6 +486,7 @@ class Runner(object):
                             if self._match_config(self.FILTER, \
                                                   (media, fs, bench, str(ncore), dio)):
                                 yield(media, fs, bench, ncore, dio)
+            # print("\n\n\n")
 
     def fxmark_env(self):
         env = ' '.join(["PERFMON_LEVEL=%s" % self.PERFMON_LEVEL,

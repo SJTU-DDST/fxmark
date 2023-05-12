@@ -40,12 +40,12 @@ define process name=filereader,instances=1
     flowop deletefile name=deletefile1,filesetname=bigfileset
     flowop createfile name=createfile2,filesetname=bigfileset,fd=1
     flowop appendfilerand name=appendfilerand2,iosize=$meanappendsize,fd=1
-    flowop fsync name=fsyncfile2,fd=1
+    #flowop fsync name=fsyncfile2,fd=1
     flowop closefile name=closefile2,fd=1
     flowop openfile name=openfile3,filesetname=bigfileset,fd=1
     flowop readwholefile name=readfile3,fd=1,iosize=$iosize
     flowop appendfilerand name=appendfilerand3,iosize=$meanappendsize,fd=1
-    flowop fsync name=fsyncfile3,fd=1
+    #flowop fsync name=fsyncfile3,fd=1
     flowop closefile name=closefile3,fd=1
     flowop openfile name=openfile4,filesetname=bigfileset,fd=1
     flowop readwholefile name=readfile4,fd=1,iosize=$iosize
@@ -53,15 +53,15 @@ define process name=filereader,instances=1
   }
 }
 
-echo  "Varmail Version 3.0 personality successfully loaded"
-usage "Usage: set \$dir=<dir>"
-usage "       set \$meanfilesize=<size>    defaults to $meanfilesize"
-usage "       set \$nfiles=<value>     defaults to $nfiles"
-usage "       set \$nthreads=<value>   defaults to $nthreads"
-usage "       set \$meanappendsize=<value> defaults to $meanappendsize"
-usage "       set \$iosize=<size>  defaults to $iosize"
-usage "       set \$meandirwidth=<size> defaults to $meandirwidth"
-usage "       run runtime (e.g. run 60)"
+#echo  "Varmail Version 3.0 personality successfully loaded"
+#usage "#usage: set \$dir=<dir>"
+#usage "       set \$meanfilesize=<size>    defaults to $meanfilesize"
+#usage "       set \$nfiles=<value>     defaults to $nfiles"
+#usage "       set \$nthreads=<value>   defaults to $nthreads"
+#usage "       set \$meanappendsize=<value> defaults to $meanappendsize"
+#usage "       set \$iosize=<size>  defaults to $iosize"
+#usage "       set \$meandirwidth=<size> defaults to $meandirwidth"
+#usage "       run runtime (e.g. run 60)"
 
 ####################################
 # re-configured values by fxmark

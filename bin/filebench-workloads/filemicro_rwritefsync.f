@@ -43,18 +43,18 @@ define process name=filewriter,instances=1
   thread name=filewriterthread,memsize=10m,instances=$nthreads
   {
     flowop write name=write-file,filename=bigfile,random,iosize=$iosize,iters=$iters
-    flowop fsync name=sync-file
+    #flowop fsync name=sync-file
     flowop finishoncount name=finish,value=$count
   }
 }
 
-echo  "FileMicro-WriteRandFsync Version 2.1 personality successfully loaded"
-usage "Usage: set \$dir=<dir>"
-usage "       set \$cached=<bool>    defaults to $cached"
-usage "       set \$count=<value>    defaults to $count"
-usage "       set \$filesize=<size>  defaults to $filesize"
-usage "       set \$iosize=<size>    defaults to $iosize"
-usage "       set \$iters=<value>    defaults to $iters"
-usage "       set \$nthreads=<value> defaults to $nthreads"
-usage " "
-usage "       run runtime (e.g. run 60)"
+#echo  "FileMicro-WriteRandFsync Version 2.1 personality successfully loaded"
+#usage "#usage: set \$dir=<dir>"
+#usage "       set \$cached=<bool>    defaults to $cached"
+#usage "       set \$count=<value>    defaults to $count"
+#usage "       set \$filesize=<size>  defaults to $filesize"
+#usage "       set \$iosize=<size>    defaults to $iosize"
+#usage "       set \$iters=<value>    defaults to $iters"
+#usage "       set \$nthreads=<value> defaults to $nthreads"
+#usage " "
+#usage "       run runtime (e.g. run 60)"
