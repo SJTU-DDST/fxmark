@@ -46,7 +46,7 @@ class Runner(object):
 
         # bench config
         self.DISK_SIZE     = "32G"
-        self.DURATION      = 60 # 30 seconds
+        self.DURATION      = 1 # 30 seconds
         self.DIRECTIOS     = ["bufferedio", "directio"]  # enable directio except tmpfs -> nodirectio 
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
@@ -54,7 +54,7 @@ class Runner(object):
                             # "NOVA",
                             "EulerFS-S",
                             "EulerFS", 
-                            # "EXT4-dax"
+                            "EXT4-dax"
         # self.FS_TYPES      = ["tmpfs",
         #                       "EXT4-dax", "ext4_no_jnl",
                             #   "xfs",
@@ -80,7 +80,7 @@ class Runner(object):
             # "DWTL",
 
             # filebench
-            # "filebench_varmail",
+            "filebench_varmail",
             # "filebench_oltp",
             # "filebench_fileserver",
 
@@ -106,7 +106,7 @@ class Runner(object):
             # "MRDL_bg",
 
             # fio
-            "fio_randrw",
+            # "fio_randrw",
 
 
             # real world
@@ -149,6 +149,7 @@ class Runner(object):
             "btrfs":"-f",
             "jfs":"-q",
             "reiserfs":"-q",
+            "ext4": "-F",
         }
 
         # media config
@@ -524,6 +525,8 @@ class Runner(object):
                          '.'.join([media, fs, bench, str(nfg), "pm"])))
         (bin, type) = self.get_bin_type(bench)
         directio = '1' if dio is "directio" else '0'
+        if fs == "EXT4-dax" or fs == "ext4":
+            directio = '1'
 
         if directio is '1':
             if fs is "tmpfs" or "EulerFS" in fs:
