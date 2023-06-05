@@ -16,7 +16,12 @@
 #include "fxmark.h"
 #include "util.h"
 
-#define PRIVATE_REGION_SIZE (1024 * 1024 * 8)
+#define MAP_DAXVM               0x400000                
+#define MAP_DAXVM_BATCHING      0x200000                
+#define MAP_DAXVM_EPHEMERAL     0x4000000    
+    
+
+#define PRIVATE_REGION_SIZE (8192)
 #define PRIVATE_REGION_PAGE_NUM (PRIVATE_REGION_SIZE/PAGE_SIZE)
 
 static void set_shared_test_root(struct worker *worker, char *test_root)
@@ -113,7 +118,7 @@ static int main_work(struct worker *worker)
         for (iter = 0; !bench->stop; ++iter) {
                 // if (pread(fd, page, PAGE_SIZE, pos) != PAGE_SIZE)
                 //         goto err_out;
-            ptr = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            ptr = mmap(NULL, PAGE_SIZE, PROT_READ, MAP_SHARED, fd, pos); //   | MAP_DAXVM | MAP_DAXVM_BATCHING | MAP_DAXVM_EPHEMERAL
             if (ptr == MAP_FAILED)
                 goto err_out;
             err = munmap(ptr, PAGE_SIZE);

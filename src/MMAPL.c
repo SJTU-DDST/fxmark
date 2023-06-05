@@ -16,6 +16,8 @@
 #include "fxmark.h"
 #include "util.h"
 
+#define MAP_DAXVM               0x400000       
+
 static void set_test_root(struct worker *worker, char *test_root)
 {
         struct fx_opt *fx_opt = fx_opt_worker(worker);
@@ -46,7 +48,7 @@ static int pre_work(struct worker *worker)
         snprintf(file, PATH_MAX, "%s/n_file_rd.dat", test_root);
         if ((fd = open(file, O_CREAT | O_RDWR, S_IRWXU)) == -1)
                 goto err_out;
-
+// printf("Thread %d: fd = %d, filename = %s, pos = %d\n", worker->id, fd, file, 0);
         /* set flag with O_DIRECT if necessary*/
         if(bench->directio && (fcntl(fd, F_SETFL, O_DIRECT) == -1))
                 goto err_out;
@@ -80,7 +82,7 @@ static int main_work(struct worker *worker)
         for (iter = 0; !bench->stop; ++iter) {
             // if (pread(fd, page, PAGE_SIZE, 0) != PAGE_SIZE)
                 // goto err_out;
-            ptr = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            ptr = mmap(NULL, PAGE_SIZE, PROT_READ, MAP_SHARED, fd, 0); //  | MAP_DAXVM
             if (ptr == MAP_FAILED)
                 goto err_out;
             err = munmap(ptr, PAGE_SIZE);

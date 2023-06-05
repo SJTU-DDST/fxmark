@@ -29,6 +29,8 @@ class Plotter(object):
                           "idle.util",
                           "iowait.util"]
         self.UNIT = 1000000.0
+        self.SILVERSEARCHER_UNIT = 1000.0
+        self.FIO_UNIT = 1.0
 
         # init.
         self.log_file = log_file
@@ -129,16 +131,31 @@ class Plotter(object):
                     d_kv = d_kv[1]
                     if int(d_kv["ncpu"]) > self.ncore:
                         break
-                    print("%s %s" %
-                          (d_kv["ncpu"], float(d_kv["works/sec"])/self.UNIT),
-                          file=out)
+                    if "fio" in bench:
+                        print("%s %s" %
+                            (d_kv["ncpu"], float(d_kv["works/sec"])/self.FIO_UNIT),
+                            file=out)
+                    elif "silversearcher" in bench:
+                        print("%s %s" %
+                            (d_kv["ncpu"], float(d_kv["works/sec"])/self.SILVERSEARCHER_UNIT),
+                            file=out)
+                    else:
+                        print("%s %s" %
+                            (d_kv["ncpu"], float(d_kv["works/sec"])/self.UNIT),
+                            file=out)
         
         # gen gp file
         print("", file=self.out)
         # print("set title \'%s:%s:%s\'" % (media, bench, iomode), file=self.out)
-        print("set title \'%s\'" % (bench), file=self.out)
+        # print("set title item noenhanced")
+        print("set title \'%s\'" % (bench.replace("_", " ")), file=self.out)
         print("set xlabel \'# Threads\'", file=self.out)
-        print("set ylabel \'%s\'" % "M ops/sec", file=self.out)
+        if "fio" in bench:
+            print("set ylabel \'%s\'" % "MiB/sec", file=self.out)
+        elif "silversearcher" in bench:
+            print("set ylabel \'%s\'" % "K ops/sec", file=self.out)
+        else:
+            print("set ylabel \'%s\'" % "M ops/sec", file=self.out)
         print("set xtics 7", file=self.out)
 
         fs = fs_list[0]
