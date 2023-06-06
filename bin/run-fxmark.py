@@ -81,10 +81,11 @@ class Runner(object):
             # "DWTL",
 
             # filebench
-            # "filebench_varmail",
+            "filebench_varmail",
             # "filebench_oltp",
             # "filebench_fileserver",
-            "filebench_randomwrite",
+            # "filebench_webserver",
+            # "filebench_randomwrite",
 
             # dbench
             # "dbench_client",
@@ -490,15 +491,16 @@ class Runner(object):
                 for media in self.MEDIA_TYPES:
                     for dio in self.DIRECTIOS:
                         for fs in self.FS_TYPES:
-                            if fs == "tmpfs" and media != "mem": # IMPORTANT!
-                                media = "mem"
-                                # continue
                             mount_fn = self.HOWTO_MOUNT.get(fs, None)
                             if not mount_fn:
                                 continue
                             if self._match_config(self.FILTER, \
                                                   (media, fs, bench, str(ncore), dio)):
-                                yield(media, fs, bench, ncore, dio)
+                                if fs == "tmpfs":
+                                    logging.warning("Setting tmpfs to mem & directio")
+                                    yield("mem", fs, bench, ncore, "directio")
+                                else:
+                                    yield(media, fs, bench, ncore, dio)
             print("\n\n\n")
 
     def fxmark_env(self):
