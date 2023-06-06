@@ -8,6 +8,7 @@ import tempfile
 import optparse
 import time
 import pdb
+import logging
 from os.path import join
 
 CUR_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -133,7 +134,8 @@ class FileBench(object):
         elif self.workload == "varmail":
             self._append_to_config("set $nthreads=%d"   % (self.ncore)) #  * 2
         else:
-            return False
+            self._append_to_config("set $nthreads=%d"   % (self.ncore)) #  * 2
+            # return False
         # config target dir and benchmark time
         self._append_to_config("set $dir=%s"            % self.root)
         self._append_to_config("run %d"                 % self.duration)
@@ -143,10 +145,15 @@ class FileBench(object):
         self._exec_cmd("echo \'%s\' >> %s" % (config_str, self.config.name)).wait()
 
     def _exec_cmd(self, cmd, out=None):
+        logging.debug("EXEC: %s;" % cmd)
         # print(cmd)
         # if "filebench" in cmd:
         #     cmd = ":"
         p = subprocess.Popen(cmd, shell=True, stdout=out, stderr=out)
+        # p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # for c in iter(lambda: p.stdout.read(1), b""):
+        #     # logging.debug("STDOUT: %s" % c)
+        #     sys.stdout.buffer.write(c)
         return p
 
 if __name__ == "__main__":
@@ -169,6 +176,9 @@ if __name__ == "__main__":
             print("Missing options: %s" % opt)
             parser.print_help()
             exit(1)
+
+    # set logging level to debug
+    # logging.basicConfig(level=logging.DEBUG)
 
     # run benchmark
     filebench = FileBench(opts.type, opts.ncore, opts.duration, opts.root,

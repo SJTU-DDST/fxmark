@@ -6,6 +6,7 @@ import subprocess
 import datetime
 import tempfile
 import pdb
+import logging
 from os.path import join
 from perfmon import PerfMon
 
@@ -80,9 +81,10 @@ class Runner(object):
             # "DWTL",
 
             # filebench
-            "filebench_varmail",
+            # "filebench_varmail",
             # "filebench_oltp",
             # "filebench_fileserver",
+            "filebench_randomwrite",
 
             # dbench
             # "dbench_client",
@@ -243,7 +245,7 @@ class Runner(object):
         return ncores
 
     def exec_cmd(self, cmd, out=None):
-        # print(cmd + ";")
+        logging.debug("EXEC: %s;" % cmd)
         # out = subprocess.PIPE
         # if "run-filebench.py" in cmd:
         #     cmd = ":"
@@ -352,9 +354,6 @@ class Runner(object):
 
     def mount_tmpfs(self, media, fs, mnt_path):
         p = self.exec_cmd("sudo mount -t tmpfs -o mode=0777,size="
-                          + self.DISK_SIZE + " none " + mnt_path,
-                          self.dev_null)
-        print("sudo mount -t tmpfs -o mode=0777,size="
                           + self.DISK_SIZE + " none " + mnt_path,
                           self.dev_null)
         return p.returncode == 0
@@ -500,7 +499,7 @@ class Runner(object):
                             if self._match_config(self.FILTER, \
                                                   (media, fs, bench, str(ncore), dio)):
                                 yield(media, fs, bench, ncore, dio)
-            # print("\n\n\n")
+            print("\n\n\n")
 
     def fxmark_env(self):
         env = ' '.join(["PERFMON_LEVEL=%s" % self.PERFMON_LEVEL,
@@ -560,7 +559,6 @@ class Runner(object):
 
     def run(self):
         try:
-            print("## TRY")
             cnt = -1
             self.log_start()
             for (cnt, (media, fs, bench, ncore, dio)) in enumerate(self.gen_config()):
@@ -587,9 +585,10 @@ class Runner(object):
             self.set_cpus(0)
 
 def confirm_media_path():
-    print("%" * 80)
-    print("%% WARNING! WARNING! WARNING! WARNING! WARNING!")
-    print("%" * 80)
+    pass
+    # print("%" * 80)
+    # print("%% WARNING! WARNING! WARNING! WARNING! WARNING!")
+    # print("%" * 80)
     # yn = input("All data in %s, %s, %s and %s will be deleted. Is it ok? [Y,N]: "
     #         % (Runner.HDDDEV, Runner.SSDDEV, Runner.NVMEDEV, Runner.LOOPDEV))
     # if yn != "Y":
@@ -638,6 +637,9 @@ if __name__ == "__main__":
         #  PerfMon.LEVEL_PERF_RECORD,
         #  ("*", "*", "*", str(cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP), "*"))
     ]
+
+    # set logging level to debug
+    # logging.basicConfig(level=logging.DEBUG)
 
     confirm_media_path()
     for c in run_config:
