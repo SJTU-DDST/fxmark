@@ -37,6 +37,8 @@ extern struct bench_operations n_fallback_ops;
 extern struct bench_operations n_MMAPL_ops;
 extern struct bench_operations n_MMAPM_ops;
 extern struct bench_operations n_MMAPH_ops;
+extern struct bench_operations n_DWOM_rand_ops;
+extern struct bench_operations n_pagefault_ops;
 extern struct bench_operations n_file_rename_ops;
 extern struct bench_operations n_file_rd_ops;
 extern struct bench_operations n_file_rd_bg_ops;

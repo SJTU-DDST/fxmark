@@ -93,6 +93,16 @@ err_out:
         goto out;
 }
 
+static void shuffle(int arr[], int n) {
+    int i;
+    for(i = n-1; i >= 1; i--) {
+        int j = rand() % (i+1);
+        int temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+}
+
 static int main_work(struct worker *worker)
 {
         struct bench *bench = worker->bench;
@@ -101,6 +111,27 @@ static int main_work(struct worker *worker)
         int fd, rc = 0;
         off_t pos;
         uint64_t iter = 0;
+
+        int n = PRIVATE_REGION_PAGE_NUM; // example size of permutation
+        int arr[n];
+        int i;
+
+        // initialize array with 1 to N
+        for(i = 0; i < n; i++) {
+                arr[i] = i; // +1
+        }
+        // seed the random number generator with current time
+        srand(time(NULL));
+
+        // shuffle the array
+        shuffle(arr, n);
+
+        // print the shuffled array
+        // printf("Random permutation of 1 to %d:\n", n);
+        // for(i = 0; i < n; i++) {
+        //         printf("%d ", arr[i]);
+        // }
+        // printf("\n");
 
 #if DEBUG 
         fprintf(stderr, "DEBUG: worker->id[%d], main worker address :%p\n",
@@ -119,7 +150,7 @@ static int main_work(struct worker *worker)
 
         pos = PRIVATE_REGION_SIZE * worker->id;
         for (iter = 0; !bench->stop; ++iter) {
-                if (pwrite(fd, page, PAGE_SIZE, pos) != PAGE_SIZE) // Old DWOM: each worker writes to its own region's same offset, may be CPU cached
+                if (pwrite(fd, page, PAGE_SIZE, pos + arr[iter % n] * PAGE_SIZE) != PAGE_SIZE) // Old DWOM: each worker writes to its own region's same offset, may be CPU cached
                         goto err_out;
         }
         close(fd);
@@ -133,7 +164,7 @@ err_out:
         goto out;
 }
 
-struct bench_operations n_mtime_upt_ops = {
+struct bench_operations n_DWOM_rand_ops = {
         .pre_work  = pre_work, 
         .main_work = main_work,
 };

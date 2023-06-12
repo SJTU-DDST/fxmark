@@ -6,6 +6,7 @@
  */	      
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -17,6 +18,7 @@
 #include "util.h"
 
 #define PRIVATE_REGION_SIZE (1024 * 1024 * 8)
+// #define PRIVATE_REGION_SIZE (1024 * 1024 * 1024 * 4)
 #define PRIVATE_REGION_PAGE_NUM (PRIVATE_REGION_SIZE/PAGE_SIZE)
 
 static void set_shared_test_root(struct worker *worker, char *test_root)
@@ -93,6 +95,16 @@ err_out:
         goto out;
 }
 
+static void shuffle(int arr[], int n) {
+    int i;
+    for(i = n-1; i >= 1; i--) {
+        int j = rand() % (i+1);
+        int temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+}
+
 static int main_work(struct worker *worker)
 {
         struct bench *bench = worker->bench;
@@ -102,6 +114,24 @@ static int main_work(struct worker *worker)
         off_t pos;
         uint64_t iter = 0;
 
+        int n = PRIVATE_REGION_PAGE_NUM; // example size of permutation
+        int arr[n];
+        int i;
+
+        // FILE *log_fp;
+
+        char *ptr;
+        char buf;
+
+        // initialize array with 1 to N
+        for(i = 0; i < n; i++) {
+                arr[i] = i; // +1
+        }
+        // seed the random number generator with current time
+        srand(time(NULL));
+
+        // shuffle the array
+        shuffle(arr, n);
 #if DEBUG 
         fprintf(stderr, "DEBUG: worker->id[%d], main worker address :%p\n",
                         worker->id, worker->page);
@@ -113,16 +143,33 @@ static int main_work(struct worker *worker)
         if ((fd = open(path, O_CREAT|O_RDWR , S_IRWXU)) == -1)
                 goto err_out;
 
+        // append
+        // if ((log_fd = open("/home/congyong/eulerfs/log.txt", O_CREAT|O_RDWR|O_APPEND , S_IRWXU)) == -1)
+        //         goto err_out;
+        // log_fp = fopen("/home/congyong/eulerfs/log.txt", "a");
+
         /* set flag with O_DIRECT if necessary*/
         if(bench->directio && (fcntl(fd, F_SETFL, O_DIRECT)==-1))
                 goto err_out;
 
         pos = PRIVATE_REGION_SIZE * worker->id;
-        for (iter = 0; !bench->stop; ++iter) {
-                if (pwrite(fd, page, PAGE_SIZE, pos) != PAGE_SIZE) // Old DWOM: each worker writes to its own region's same offset, may be CPU cached
-                        goto err_out;
+        ptr = mmap(NULL, PRIVATE_REGION_SIZE, PROT_READ, MAP_SHARED, fd, pos);
+
+        // fprintf(log_fp, "worker %d, ptr %p\n", worker->id, ptr); (PRIVATE_REGION_SIZE/PAGE_SIZE)
+        // fprintf(log_fp, "PRIVATE_REGION_SIZE=%d PAGE_SIZE=%d n=%d\n", PRIVATE_REGION_SIZE, PAGE_SIZE, n);
+
+        for (iter = 0; !bench->stop; ++iter) { //  && iter < n
+                // if (pwrite(fd, page, PAGE_SIZE, pos + arr[iter % n] * PAGE_SIZE) != PAGE_SIZE) // Old DWOM: each worker writes to its own region's same offset, may be CPU cached
+                        // goto err_out;
+                buf = ptr[arr[iter % n] * PAGE_SIZE];
+                if (iter % n == n - 1) {
+                        msync(ptr, PRIVATE_REGION_SIZE, MS_SYNC);
+                }
         }
+
+        // fprintf(log_fp, "worker %d, iter %lu\n", worker->id, iter);
         close(fd);
+        // fclose(log_fp);
 out:
         worker->works = (double)iter;
         return rc;
@@ -133,7 +180,7 @@ err_out:
         goto out;
 }
 
-struct bench_operations n_mtime_upt_ops = {
+struct bench_operations n_pagefault_ops = {
         .pre_work  = pre_work, 
         .main_work = main_work,
 };
