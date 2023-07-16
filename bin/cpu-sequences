@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import errno
 import sys
@@ -8,7 +8,7 @@ import sys
 #  physical id = chip 
 #  core id     = physical core id in a chip
 #  cpu cores   = number of cores in a chip
-cpuinfo = [dict(map(str.strip, line.split(":", 1))
+cpuinfo = [dict(list(map(str.strip, line.split(":", 1)))
                 for line in block.splitlines())
            for block in sys.stdin.read().split("\n\n")
            if len(block.strip())]
@@ -52,10 +52,10 @@ def rr(cpuinfo):
                 key =  str(physical_id) + ":" + str(core_id)
                 yield pc_map[key][smt]
 
-print "model name     : %s" % model_name
-print "physical chips : %s" % physical_chips
-print "core per chip  : %s" % core_per_chip
-print "smt level      : %s" % smt_level
-print "cache per core : %s" % cache_per_core
-print "seq            : %s" % ",".join(cpu["processor"] for cpu in seq(cpuinfo))
-print "rr             : %s" % ",".join(cpu["processor"] for cpu in rr(cpuinfo))
+print("model name     : %s" % model_name)
+print("physical chips : %s" % physical_chips)
+print("core per chip  : %s" % core_per_chip)
+print("smt level      : %s" % smt_level)
+print("cache per core : %s" % cache_per_core)
+print("seq            : %s" % ",".join(cpu["processor"] for cpu in seq(cpuinfo)))
+print("rr             : %s" % ",".join(cpu["processor"] for cpu in rr(cpuinfo)))

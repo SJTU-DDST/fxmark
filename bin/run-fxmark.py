@@ -46,7 +46,7 @@ class Runner(object):
         self.DEBUG_OUT     = False
 
         # bench config
-        self.DISK_SIZE     = "32G"
+        self.DISK_SIZE     = "3G"
         self.DURATION      = 1 # 30 seconds
         self.DIRECTIOS     = ["bufferedio", "directio"]  # enable directio except tmpfs -> nodirectio 
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
@@ -116,8 +116,8 @@ class Runner(object):
             # "silversearcher_kernel",
 
             # rand
-            # "DWOM_rand",
-            "pagefault",
+            "DWOM_rand",
+            # "pagefault",
         ]
         self.BENCH_BG_SFX   = "_bg"
 
@@ -172,7 +172,7 @@ class Runner(object):
         self.dev_null    = open("/dev/null", "a") if not self.DEBUG_OUT else None
         self.npcpu       = cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP
         self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL#,14,21,28,35,42,49,56 # 1,2,4,6,8,10,12,14,16
-        self.ncores      = [1,14,21,28,35,42,49,56] # [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
+        self.ncores      = [1,4,8] # [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
         self.test_root   = os.path.normpath(
             os.path.join(CUR_DIR, self.ROOT_NAME))
         self.fxmark_path = os.path.normpath(

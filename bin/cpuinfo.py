@@ -24,7 +24,7 @@ def maybeInt(s):
 #
 
 def getCPUSet(name):
-    return set(parseRange(file("/sys/devices/system/cpu/%s" % name).read()))
+    return set(parseRange(open("/sys/devices/system/cpu/%s" % name).read()))
 
 #
 # /proc/cpuinfo
@@ -34,11 +34,11 @@ def parseCpuinfo(path):
     "Read a cpuinfo file and return [{field : value}]."
 
     res = []
-    for block in file(path, "r").read().split("\n\n"):
+    for block in open(path, "r").read().split("\n\n"):
         if len(block.strip()):
             res.append({})
             for line in block.splitlines():
-                k, v = map(str.strip, line.split(":", 1))
+                k, v = list(map(str.strip, line.split(":", 1)))
                 res[-1][k] = maybeInt(v)
             # Try to get additional info
             processor = res[-1]["processor"]
@@ -56,17 +56,17 @@ def findCpuinfo(paths = [INITCPUINFO, "/proc/cpuinfo"], needCPUs = None):
             cpuinfo = parseCpuinfo(path)
             break
     else:
-        print >> sys.stderr, "No cpuinfo found (tried %s)" % ":".join(paths)
+        print("No cpuinfo found (tried %s)" % ":".join(paths), file=sys.stderr)
         sys.exit(1)
 
     if needCPUs is None:
         needCPUs = getCPUSet("present")
     if needCPUs.difference(set(int(cpu["processor"]) for cpu in cpuinfo)):
-        print >> sys.stderr, ("Warning: Some processors are missing from %s.  "
-                              "Are all processors online?" % path)
+        print(("Warning: Some processors are missing from %s.  "
+                              "Are all processors online?" % path), file=sys.stderr)
         if not os.path.exists(INITCPUINFO):
-            print >> sys.stderr, ("Protip:  Add `cp /proc/cpuinfo %s' to "
-                                  "/etc/rc.local." % INITCPUINFO)
+            print(("Protip:  Add `cp /proc/cpuinfo %s' to "
+                                  "/etc/rc.local." % INITCPUINFO), file=sys.stderr)
 
     return cpuinfo
 
@@ -102,7 +102,7 @@ def parseRange(r):
         if len(lr) == 1 and lr[0].isdigit():
             res.append(int(lr[0]))
         elif len(lr) == 2 and lr[0].isdigit() and lr[1].isdigit():
-            res.extend(range(int(lr[0]), int(lr[1]) + 1))
+            res.extend(list(range(int(lr[0]), int(lr[1]) + 1)))
         else:
             raise ValueError("Invalid range syntax: %r" % r)
     return res
@@ -142,7 +142,7 @@ class CPUBase(object):
                     msg += ' (is the msr module loaded?)'
                 else:
                     msg += ' (bad CPU number?)'
-            print >>sys.stderr, msg
+            print(msg, file=sys.stderr)
             sys.exit(1)
         try:
             # See man msr.  It's a weird interface
@@ -205,11 +205,11 @@ class NehalemPrefetchSettings(
 
     @classmethod
     def from_msr(cls, val):
-        return cls(**{k: not (val & bit) for k, bit in cls._BITS.items()})
+        return cls(**{k: not (val & bit) for k, bit in list(cls._BITS.items())})
 
     def to_msr(self):
         bits = 0
-        for k, bit in self._BITS.items():
+        for k, bit in list(self._BITS.items()):
             if not getattr(self, k):
                 bits |= bit
         return self._MASK, bits

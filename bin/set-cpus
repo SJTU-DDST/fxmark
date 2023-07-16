@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import sys, os, optparse
 from cpuinfo import *
@@ -105,15 +105,15 @@ for arg in args:
     elif arg and arg[0].isdigit():
         try:
             updateBaseCPUs(set(parseRange(arg)))
-        except ValueError, e:
+        except ValueError as e:
             parser.error(e)
     elif arg in ("present", "possible", "online", "offline"):
         updateBaseCPUs(getCPUSet(arg))
     elif arg == "all":
         updateBaseCPUs(getCPUSet("present").
                        intersection(getCPUSet("possible")))
-    elif any(op in arg for op in operators.keys()):
-	op = (op for op in operators.keys() if op in arg).next()
+    elif any(op in arg for op in list(operators.keys())):
+        op = next((op for op in list(operators.keys()) if op in arg))
         field, value = arg.split(op, 1)
         if field not in FIELDS:
             parser.error("unknown filter %r" % field)
@@ -128,7 +128,7 @@ for arg in args:
             parser.error("unknown sorter %r" % field)
         try:
             perm = parseRange(perm)
-        except ValueError, e:
+        except ValueError as e:
             parser.error(e)
         filters.append(lambda cpu, field=field, perm=perm: cpu[field] in perm)
         sorters.append(lambda cpu, field=field, perm=perm:
@@ -147,7 +147,7 @@ if baseCPUs is None:
 # [{field : value}]
 if filters or sorters or options.display == "table":
     cpuinfo = expandCpuinfo(findCpuinfo(options.cpuinfo.split(":"), baseCPUs))
-    cpuinfo = filter(lambda cpu: cpu["processor"] in baseCPUs, cpuinfo)
+    cpuinfo = [cpu for cpu in cpuinfo if cpu["processor"] in baseCPUs]
 else:
     # Fake just what we need.  This way we don't care if /proc/cpuinfo
     # is incomplete
@@ -155,7 +155,7 @@ else:
 
 # Filter and sort
 for filt in filters:
-    cpuinfo = filter(filt, cpuinfo)
+    cpuinfo = list(filter(filt, cpuinfo))
 for sorter in reversed(sorters):
     cpuinfo.sort(key = sorter)
 if options.limit != None:
@@ -173,13 +173,12 @@ if options.set:
     # kernel allocated resources for them) and physically present
     bad = wantOnline - getCPUSet("present")
     if bad:
-        print >> sys.stderr, "CPU(s) %s are not present" % strRange(sorted(bad))
+        print("CPU(s) %s are not present" % strRange(sorted(bad)), file=sys.stderr)
         sys.exit(1)
     bad = wantOnline - getCPUSet("possible")
     if bad:
-        print >> sys.stderr, \
-            ("CPU(s) %s are present, but not allocated by the kernel" %
-             strRange(sorted(bad)))
+        print(("CPU(s) %s are present, but not allocated by the kernel" %
+             strRange(sorted(bad))), file=sys.stderr)
         sys.exit(1)
 
     # We can't change all CPU states
@@ -187,33 +186,33 @@ if options.set:
     disable = wantOffline - getCPUSet("offline")
     for plug in enable.union(disable):
         if not os.path.exists("/sys/devices/system/cpu/cpu%d/online" % plug):
-            print >> sys.stderr, "CPU %d cannot be hot-plugged" % plug
+            print("CPU %d cannot be hot-plugged" % plug, file=sys.stderr)
             sys.exit(1)
 
     # Do it!
     msg = "Enabling %s" % strRange(sorted(wantOnline))
     if wantOffline:
         msg += ", disabling %s" % strRange(sorted(wantOffline))
-    print >> sys.stderr, msg+"..."
+    print(msg+"...", file=sys.stderr)
     for plug in getCPUSet("present"):
         path = "/sys/devices/system/cpu/cpu%d/online" % plug
         if plug in enable:
-            print >> file(path, "w"), "1"
+            print("1", file=file(path, "w"))
         elif plug in disable:
-            print >> file(path, "w"), "0"
+            print("0", file=file(path, "w"))
 
 # Print
 if options.display == "compact":
-    print strRange(cpu["processor"] for cpu in cpuinfo)
+    print(strRange(cpu["processor"] for cpu in cpuinfo))
 elif options.display == "compact-set":
-    print strRange(sorted(cpu["processor"] for cpu in cpuinfo))
+    print(strRange(sorted(cpu["processor"] for cpu in cpuinfo)))
 elif options.display == "comma":
-    print ",".join(str(cpu["processor"]) for cpu in cpuinfo)
+    print(",".join(str(cpu["processor"]) for cpu in cpuinfo))
 elif options.display == "space":
-    print " ".join(str(cpu["processor"]) for cpu in cpuinfo)
+    print(" ".join(str(cpu["processor"]) for cpu in cpuinfo))
 elif options.display == "table":
-    print "processor socket coreid thread apicid node"
+    print("processor socket coreid thread apicid node")
     for cpu in cpuinfo:
-        print "%-9d %-6d %-6d %-6d %-6d %s" % \
+        print("%-9d %-6d %-6d %-6d %-6d %s" % \
             (cpu["processor"], cpu["socket"], cpu["coreid"], cpu["thread"],
-             cpu["apicid"], cpu.get("node", "unknown"))
+             cpu["apicid"], cpu.get("node", "unknown")))

@@ -1,10 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import errno
 import sys
 
 # Load topology infomation from stdin
-topology_info = [dict(map(str.strip, line.split(":", 1))
+topology_info = [dict(list(map(str.strip, line.split(":", 1)))
                       for line in block.splitlines())
                  for block in sys.stdin.read().split("\n\n")
                  if len(block.strip())]
@@ -34,7 +34,7 @@ def gen_test_hw_thr_counts(fine_grain):
     test_hw_thr.add(2)
 
     if 4 > total_hw_thr:
-        return ','.join( map(lambda cnt: str(cnt), sorted(list(test_hw_thr))) )
+        return ','.join( [str(cnt) for cnt in sorted(list(test_hw_thr))] )
     test_hw_thr.add(4)
 
     # for all smt levels
@@ -66,42 +66,42 @@ def gen_test_hw_thr_counts(fine_grain):
                 test_hw_thr.add(cnt)
             cnt += inc
     # make it sorted string
-    return ','.join( map(lambda cnt: str(cnt), sorted(list(test_hw_thr))) )
+    return ','.join( [str(cnt) for cnt in sorted(list(test_hw_thr))] )
 
 test_hw_thr_cnts_fine_grain = gen_test_hw_thr_counts(True)
 test_hw_thr_cnts_coarse_grain = gen_test_hw_thr_counts(False)
 
 # Generate C header
 def gen_in_c(): 
-    print "const char *MODEL_NAME                             = \"" + \
-        MODEL_NAME + "\";"
-    print "const unsigned int PHYSICAL_CHIPS                  = " + \
-        PHYSICAL_CHIPS + ";"
-    print "const unsigned int CORE_PER_CHIP                   = " + \
-        CORE_PER_CHIP + ";"
-    print "const unsigned int SMT_LEVEL                       = " + \
-        SMT_LEVEL + ";"
-    print "const unsigned int CACHE_PER_CORE                  = " + \
-        CACHE_PER_CORE + ";"
-    print "const unsigned int seq_cores[]                     = " + \
-        "{" + seq_cores + "};"
-    print "const unsigned int rr_cores[]                      = " + \
-        "{" + rr_cores  + "};"
-    print "const unsigned int test_hw_thr_cnts_fine_grain[]   = " + \
-        "{" + test_hw_thr_cnts_fine_grain  + "};"
-    print "const unsigned int test_hw_thr_cnts_coarse_grain[] = " + \
-        "{" + test_hw_thr_cnts_coarse_grain  + "};"
+    print("const char *MODEL_NAME                             = \"" + \
+        MODEL_NAME + "\";")
+    print("const unsigned int PHYSICAL_CHIPS                  = " + \
+        PHYSICAL_CHIPS + ";")
+    print("const unsigned int CORE_PER_CHIP                   = " + \
+        CORE_PER_CHIP + ";")
+    print("const unsigned int SMT_LEVEL                       = " + \
+        SMT_LEVEL + ";")
+    print("const unsigned int CACHE_PER_CORE                  = " + \
+        CACHE_PER_CORE + ";")
+    print("const unsigned int seq_cores[]                     = " + \
+        "{" + seq_cores + "};")
+    print("const unsigned int rr_cores[]                      = " + \
+        "{" + rr_cores  + "};")
+    print("const unsigned int test_hw_thr_cnts_fine_grain[]   = " + \
+        "{" + test_hw_thr_cnts_fine_grain  + "};")
+    print("const unsigned int test_hw_thr_cnts_coarse_grain[] = " + \
+        "{" + test_hw_thr_cnts_coarse_grain  + "};")
 
 def gen_in_py(): 
-    print "MODEL_NAME                    = \"" + MODEL_NAME + "\""
-    print "PHYSICAL_CHIPS                = " + PHYSICAL_CHIPS
-    print "CORE_PER_CHIP                 = " + CORE_PER_CHIP
-    print "SMT_LEVEL                     = " + SMT_LEVEL
-    print "CACHE_PER_CORE                = " + CACHE_PER_CORE
-    print "seq_cores                     = [" + seq_cores + "]"
-    print "rr_cores                      = [" + rr_cores  + "]"
-    print "test_hw_thr_cnts_fine_grain   = [" + test_hw_thr_cnts_fine_grain + "]"
-    print "test_hw_thr_cnts_coarse_grain = [" + test_hw_thr_cnts_coarse_grain + "]"
+    print("MODEL_NAME                    = \"" + MODEL_NAME + "\"")
+    print("PHYSICAL_CHIPS                = " + PHYSICAL_CHIPS)
+    print("CORE_PER_CHIP                 = " + CORE_PER_CHIP)
+    print("SMT_LEVEL                     = " + SMT_LEVEL)
+    print("CACHE_PER_CORE                = " + CACHE_PER_CORE)
+    print("seq_cores                     = [" + seq_cores + "]")
+    print("rr_cores                      = [" + rr_cores  + "]")
+    print("test_hw_thr_cnts_fine_grain   = [" + test_hw_thr_cnts_fine_grain + "]")
+    print("test_hw_thr_cnts_coarse_grain = [" + test_hw_thr_cnts_coarse_grain + "]")
 
 # main 
 if __name__ == "__main__":
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     elif sys.argv[1] == "py":
         gen_in_py()
     else:
-        print "Usage: %s {c|py}" % sys.argv[0]
+        print("Usage: %s {c|py}" % sys.argv[0])
     
         
     

@@ -23,10 +23,10 @@ class KernelBackTrace(object):
                 print(asm_line)
         i = -1
         for (i, ibt) in enumerate(self._get_inlined_backtrace(asm_caller, callee)):
-            print("--- %d-th inlined backtrace ---" % (i + 1))
+            print(("--- %d-th inlined backtrace ---" % (i + 1)))
             for bt in ibt:
-                print(" %s" % bt);
-        print(">>> %d inlined backtraces were found!" % (i + 1))
+                print((" %s" % bt));
+        print((">>> %d inlined backtraces were found!" % (i + 1)))
 
     def _get_file_asm(self):
         '''
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     for opt in vars(opts):
         val = getattr(opts, opt)
         if val == None:
-            print("Missing options: --%s" % opt)
+            print(("Missing options: --%s" % opt))
             parser.print_help()
             exit(1)
 

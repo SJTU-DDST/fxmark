@@ -25,14 +25,14 @@ class PerfStdio(object):
             os.mkdir(self.out_dir_name)
         for f in os.listdir(self.dir_name):
             if f.endswith(("data")):
-                print("parsing %s ..." % f)
+                print(("parsing %s ..." % f))
                 stdio_filename = f + ".stdio.txt"
                 cmd_arg = "sudo perf report -f --stdio -i %s" % ( \
                         os.path.join(self.dir_name, f))
                 out_fd = open(os.path.join(self.out_dir_name, stdio_filename), "w")
                 self._exec_cmd(cmd_arg, out_fd)
                 out_fd.close()
-                print("parsing %s ... done" % f)
+                print(("parsing %s ... done" % f))
 
     def _exec_cmd(self, cmd, out=subprocess.STDOUT):
         p = subprocess.Popen(cmd, shell=True,

@@ -60,7 +60,7 @@ class Parser(object):
         self.config[key] = value
 
     def _norm_key(self, ks):
-        return tuple( map(lambda k: self._norm_str(k), ks))
+        return tuple( [self._norm_str(k) for k in ks])
 
     def _parse_key(self, l):
         ks = l.split(" ", 1)[1].split(":")
@@ -95,13 +95,13 @@ def __get_cpu_num(log, fs, bc, core, sp):
         iotime = r[1]['iowait.sec']
         idletime = r[1]['idle.sec']
         if float(sp) == 0:
-            print("user: %s\nsys:  %s\nidle: %s\nio:   %s\n" %
-                (usertime, systime, idletime, iotime))
+            print(("user: %s\nsys:  %s\nidle: %s\nio:   %s\n" %
+                (usertime, systime, idletime, iotime)))
         else:
             synctime = float(sp) * float(systime) / 100.0
             fstime = float(systime) - synctime
-            print("user:    %s\nfs-sys:  %s\nsync-sys:%s\nidle:    %s\nio:      %s\n" %
-                (usertime, fstime, synctime, idletime, iotime))
+            print(("user:    %s\nfs-sys:  %s\nsync-sys:%s\nidle:    %s\nio:      %s\n" %
+                (usertime, fstime, synctime, idletime, iotime)))
 
 
 def __get_performance(log, fs, bc):
@@ -111,8 +111,8 @@ def __get_performance(log, fs, bc):
     key = ("mem", fs, bc, "*")
     r = parser.search_data(key)
     for i in range(len(r)):
-        print("%s: %s" % (r[i][1]["ncpu"], float(r[i][1]["works/sec"])
-            / float(r[0][1]["works/sec"])))
+        print(("%s: %s" % (r[i][1]["ncpu"], float(r[i][1]["works/sec"])
+            / float(r[0][1]["works/sec"]))))
 
 
 if __name__ == "__main__":
