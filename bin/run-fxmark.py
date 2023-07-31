@@ -56,6 +56,7 @@ class Runner(object):
                             "EulerFS-S",
                             "EulerFS", 
                             "EXT4-dax",
+                            # "tmpfs",
         # self.FS_TYPES      = ["tmpfs",
         #                       "EXT4-dax", "ext4_no_jnl",
                             #   "xfs",
@@ -76,16 +77,17 @@ class Runner(object):
             # "MWRM",
             # "MWCL",
             # "MWCM",
-            # "MWUM",
-            # "MWUL",
+            # "MWUM", # crash
+            # "MWUL", # crash
             # "DWTL",
 
             # filebench
-            # "filebench_varmail",
+            "filebench_varmail",
             # "filebench_oltp",
-            # "filebench_fileserver",
+            "filebench_fileserver",
             # "filebench_webserver",
             # "filebench_randomwrite",
+            # "filebench_createfiles",
 
             # dbench
             # "dbench_client",
@@ -108,8 +110,9 @@ class Runner(object):
             # "DRBL_bg",
             # "MRDL_bg",
 
-            # fio
-            # "fio_randrw",
+            # fio 
+            # "fio_zipf_mmap", # mmap
+            # "fio_zipf_sync",
 
 
             # real world
@@ -117,7 +120,7 @@ class Runner(object):
 
             # rand
             # "DWOM_rand",
-            "pagefault",
+            # "pagefault",
         ]
         self.BENCH_BG_SFX   = "_bg"
 
@@ -171,8 +174,9 @@ class Runner(object):
         self.redirect    = subprocess.PIPE if not self.DEBUG_OUT else None
         self.dev_null    = open("/dev/null", "a") if not self.DEBUG_OUT else None
         self.npcpu       = cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP
-        self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL#,14,21,28,35,42,49,56 # 1,2,4,6,8,10,12,14,16
-        self.ncores      = [1,14,21,28,35,42,49,56] # [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
+        self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL#,14,21,28,35,42,49,56 # 1,2,4,6,8,10,12,14,16 #1,4,8,12,16,20,24,28,32# [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
+        # self.ncores      = [1,7,14,21,28,35,42,49,56] 
+        self.ncores      = [1,2,4,8,16]
         self.test_root   = os.path.normpath(
             os.path.join(CUR_DIR, self.ROOT_NAME))
         self.fxmark_path = os.path.normpath(
