@@ -8,6 +8,9 @@ import math
 import pdb
 from parser import Parser
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 CUR_DIR     = os.path.abspath(os.path.dirname(__file__))
 
 """
@@ -168,6 +171,76 @@ class Plotter(object):
                   end="", file=self.out)
         print("", file=self.out)
 
+    def _plot_sc_data_matplotlib(self, media, bench, iomode):
+        def _get_sc_style(fs):
+            return "with lp ps 0.5"
+
+        def _get_data_file(fs):
+            return "%s:%s:%s:%s.dat" % (media, fs, bench, iomode)
+
+        # check if there are data
+        fs_list = self._get_fs_list(media, bench, iomode)
+        if fs_list == []:
+            return
+        
+        # gen sc data files
+        for fs in fs_list:
+            data = self.parser.search_data([media, fs, bench, "*", iomode])
+            if data == []:
+                continue
+            data_file = os.path.join(self.out_dir, _get_data_file(fs))
+
+            with open(data_file, "w") as out:
+                print("# %s:%s:%s:%s:*" % (media, fs, bench, iomode), file=out)
+                for d_kv in data:
+                    d_kv = d_kv[1]
+                    if int(d_kv["ncpu"]) > self.ncore:
+                        break
+                    if "fio" in bench:
+                        print("%s %s" %
+                            (d_kv["ncpu"], float(d_kv["works/sec"])/self.FIO_UNIT),
+                            file=out)
+                    elif "silversearcher" in bench:
+                        print("%s %s" %
+                            (d_kv["ncpu"], float(d_kv["works/sec"])/self.SILVERSEARCHER_UNIT),
+                            file=out)
+                    else:
+                        print("%s %s" %
+                            (d_kv["ncpu"], float(d_kv["works/sec"])/self.UNIT),
+                            file=out)
+        # color
+        c = np.array([[102, 194, 165], [252, 141, 98], [141, 160, 203], 
+                [231, 138, 195], [166,216,84], [255, 217, 47],
+                [229, 196, 148], [179, 179, 179]])
+        c  = c/255
+        markers = ['H', '^', '>', 'D', 'o', 's']
+        
+        # gen gp file
+        fig, ax = plt.subplots(figsize=(4, 3))
+
+        fs = fs_list[0]
+        ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
+        for i, fs in enumerate(fs_list[1:]):
+            ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[i+1], marker=markers[i+1], lw=3, mec='black', markersize=8, alpha=1)
+        
+        ax.set_title(bench.replace("_", " "))
+        ax.grid(axis='y', linestyle='-.')
+        ax.set_xlabel("# Threads")
+        if "fio" in bench:
+            ax.set_ylabel("MiB/sec")
+        elif "silversearcher" in bench:
+            ax.set_ylabel("K ops/sec")
+        else:
+            ax.set_ylabel("M ops/sec")
+
+        fig.legend(loc=9, ncol=len(fs_list), frameon=False)
+        fig.tight_layout()
+        fig.subplots_adjust(top=0.8)
+
+        plt.savefig(os.path.join(self.out_dir, "%s.png" % bench))
+        plt.savefig(os.path.join(self.out_dir, "%s.svg" % bench))
+        plt.close()
+
     def _plot_util_data(self, media, ncore, bench, iomode):
         print("", file=self.out)
         print("set grid y", file=self.out)
@@ -229,6 +302,21 @@ class Plotter(object):
         self._plot_footer()
         self.out.close()
         self._gen_pdf(self.out_file)
+
+    def plot_sc_matplotlib(self, out_dir):
+        self.out_dir  = out_dir
+        subprocess.call("mkdir -p %s" % self.out_dir, shell=True)
+        # self.out_file = os.path.join(self.out_dir, "sc.gp")
+        # self.out = open(self.out_file, "w")
+        # self._gen_log_info()
+        # self._plot_header()
+        for media in self.config["media"]:
+            for bench in self.config["bench"]:
+                for iomode in self.config["iomode"]:
+                    self._plot_sc_data_matplotlib(media, bench, iomode)
+        # self._plot_footer()
+        # self.out.close()
+        # self._gen_pdf(self.out_file)
 
     def plot_util(self, ncore, out_dir):
         self.out_dir  = out_dir
@@ -316,6 +404,8 @@ if __name__ == "__main__":
     plotter = Plotter(opts.log)
     if opts.ty == "sc":
         plotter.plot_sc(opts.out)
+    elif opts.ty == "sc-matplotlib":
+        plotter.plot_sc_matplotlib(opts.out)
     elif opts.ty == "util":
         plotter.plot_util(int(opts.ncore), opts.out)
     elif opts.ty == "cmpdev":
