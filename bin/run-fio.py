@@ -62,8 +62,8 @@ class FIO(object):
     def _run_fio(self):
         with tempfile.NamedTemporaryFile(delete=False) as self.bench_out:
             cmd = "sudo fio --name=rand_rw_4k --ioengine=mmap --rw=randrw --rwmixread=50 --random_distribution=zipf:0.88 --numjobs=%s --bs=4k --size=1g --runtime=%s --time_based=1 --gtod_reduce=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
-            if "sync" in self.workload:
-                cmd = "sudo fio --name=rand_rw_4k --ioengine=sync --fsync=256 --rw=randrw --rwmixread=50 --random_distribution=zipf:0.88 --numjobs=%s --bs=4k --size=1g --runtime=%s --time_based=1 --gtod_reduce=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
+            if "sync" in self.workload:#--fsync=256
+                cmd = "sudo fio --name=rand_rw_4k --ioengine=sync  --rw=randrw --rwmixread=50 --random_distribution=zipf:0.88 --numjobs=%s --bs=4k --size=1g --runtime=%s --time_based=1 --gtod_reduce=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
             p = self._exec_cmd(cmd, subprocess.PIPE)
             while True:
                 for l in p.stdout.readlines():

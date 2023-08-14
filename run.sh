@@ -4,7 +4,7 @@ rm -rf cpu*;
 bin/run-fxmark.py;
 chown congyong ./logs/ -R;
 
-bin/plotter.py --ty sc --log logs/*/fxmark.log --out out;
+bin/plotter.py --ty sc-matplotlib --log logs/*/fxmark.log --out out;
 chown congyong ./out/ -R;
 
 # bin/plotter.py --ty util --log logs/*/fxmark.log --ncore 1 --out cpu1;
@@ -20,4 +20,6 @@ chown congyong ./out/ -R;
 # bin/plotter.py --ty util --log logs/*/fxmark.log --ncore 32 --out cpu32;
 # chown congyong ./cpu32/ -R;
 
-python3 convert.py
+# legacy
+# bin/plotter.py --ty sc --log logs/*/fxmark.log --out out;
+# python3 convert.py

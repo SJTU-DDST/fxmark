@@ -47,7 +47,7 @@ class Runner(object):
 
         # bench config
         self.DISK_SIZE     = "32G"
-        self.DURATION      = 1 # 30 seconds
+        self.DURATION      = 30 # 30 seconds
         self.DIRECTIOS     = ["bufferedio", "directio"]  # enable directio except tmpfs -> nodirectio 
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
@@ -75,19 +75,19 @@ class Runner(object):
             # "DWSL",
             # "MWRL",
             # "MWRM",
-            # "MWCL",
-            # "MWCM",
+            "MWCL", # require 30s duration to stabilize
+            "MWCM",
             # "MWUM", # crash
             # "MWUL", # crash
             # "DWTL",
 
             # filebench
-            "filebench_varmail",
+            # "filebench_varmail",
             # "filebench_oltp",
-            "filebench_fileserver",
+            # "filebench_fileserver",
             # "filebench_webserver",
             # "filebench_randomwrite",
-            # "filebench_createfiles",
+            # "filebench_createfiles", # TODO: create empty files to test dir ops?
 
             # dbench
             # "dbench_client",
@@ -96,6 +96,7 @@ class Runner(object):
             # "MRPL",
             # "MRPM",
             # "MRPH",
+
             # "MRDM",
             # "MRDL",
             # "DRBH",
@@ -175,8 +176,10 @@ class Runner(object):
         self.dev_null    = open("/dev/null", "a") if not self.DEBUG_OUT else None
         self.npcpu       = cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP
         self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL#,14,21,28,35,42,49,56 # 1,2,4,6,8,10,12,14,16 #1,4,8,12,16,20,24,28,32# [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
-        # self.ncores      = [1,7,14,21,28,35,42,49,56] 
-        self.ncores      = [1,2,4,8,16]
+        self.ncores      = [1,7,14,21,28,35,42,49,56] 
+        # self.ncores      = [1,2,4,8,16]
+        # self.ncores      = [1,4,8,12,16]
+        
         self.test_root   = os.path.normpath(
             os.path.join(CUR_DIR, self.ROOT_NAME))
         self.fxmark_path = os.path.normpath(
@@ -496,6 +499,9 @@ class Runner(object):
     def gen_config(self):
         for ncore in sorted(self.ncores, reverse=True):
             for bench in self.BENCH_TYPES:
+                if "fio" in bench and ncore > 16: # fio does not support > 16 cores
+                    continue
+
                 for media in self.MEDIA_TYPES:
                     for dio in self.DIRECTIOS:
                         for fs in self.FS_TYPES:
@@ -544,12 +550,18 @@ class Runner(object):
             else: 
                 print("# INFO: DirectIO Enabled")
 
+        if "mmap" in bench and self.DURATION < 30:
+            duration = 30
+            print("# INFO: mmap bench requires at least 30s")
+        else:
+            duration = self.DURATION
+
         cmd = ' '.join([self.fxmark_env(),
                         bin,
                         "--type", type,
                         "--ncore", str(ncore),
                         "--nbg",  str(nbg),
-                        "--duration", str(self.DURATION),
+                        "--duration", str(duration),
                         "--directio", directio,
                         "--root", self.test_root,
                         "--profbegin", "\"%s\"" % self.perfmon_start,
