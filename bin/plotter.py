@@ -22,6 +22,10 @@ CUR_DIR     = os.path.abspath(os.path.dirname(__file__))
 
 class Plotter(object):
     def __init__(self, log_file):
+        (opts, args) = parser.parse_args()
+        gen_dat = "gen" in opts.ty
+        plot = "plotter" in opts.ty
+
         # config
         self.UNIT_WIDTH  = 2.3
         self.UNIT_HEIGHT = 2.3
@@ -39,12 +43,49 @@ class Plotter(object):
         self.log_file = log_file
         self.parser = Parser()
         self.parser.parse(self.log_file)
-        self.config = self._get_config()
+        if not plot:
+            self.config = self._get_config()
+        else:
+            self.config = self._get_config_from_out() # plot NOVA & other fs together
         self.ncore = int(self.parser.get_config("PHYSICAL_CHIPS")) * \
                      int(self.parser.get_config("CORE_PER_CHIP"))
         self.out_dir  = ""
         self.out_file = ""
         self.out = 0
+
+        # print("media", self.config["media"])
+        # print("fs", self.config["fs"])
+        # print("bench", self.config["bench"])
+        # print("ncore", self.config["ncore"])
+        # print("iomode", self.config["iomode"])
+
+        # self._get_config_from_out() # try
+
+    def _get_config_from_out(self):
+        # check all the files ../out/{media:fs:bench:iomode}.dat to get config
+        all_config = []
+        config_dic = {}
+        for f in os.listdir("./out/"):
+            if f.endswith(".dat"):
+                key = f.split(".")[0].split(":")
+                for (i, k) in enumerate(key):
+                    try:
+                        all_config[i]
+                    except IndexError:
+                        all_config.append(set())
+                    all_config[i].add(k)
+        for (i, key) in enumerate(["media", "fs", "bench", "iomode"]):
+            config_dic[key] = sorted(list(all_config[i]))
+        config_dic["ncore"] = ['000000001', '000000002', '000000004', '000000008', '000000012', '000000016', '000000020', '000000024', '000000028']
+        # TODO: require manual modification
+
+        # print("media", config_dic["media"])
+        # print("fs", config_dic["fs"])
+        # print("bench", config_dic["bench"])
+        # print("ncore", config_dic["ncore"])
+        # print("iomode", config_dic["iomode"])
+        return config_dic
+    
 
     def _get_config(self):
         all_config = []
@@ -77,16 +118,31 @@ class Plotter(object):
         return pdf_name
 
     def _get_fs_list(self, media, bench, iomode):
-        data = self.parser.search_data([media, "*", bench, "*", iomode])
-        fs_set = set()
-        for kd in data:
-            fs = kd[0][1]
-            if fs not in self.EXCLUDED_FS:
-                fs_set.add(fs)
-        #remove tmpfs - to see more acurate comparision between storage fses
-#        fs_set.remove("tmpfs");
-        return sorted(list(fs_set))
-
+        # get args
+        (opts, args) = parser.parse_args()
+        gen_dat = "gen" in opts.ty
+        plot = "plotter" in opts.ty
+        
+        if plot:
+            # check all the files ../out/{media:fs:bench:iomode}.dat to get fs_set
+            fs_set = set()
+            for f in os.listdir("./out/"):
+                if f.endswith(".dat"):
+                    key = f.split(".")[0].split(":")
+                    if key[0] == media and key[2] == bench and key[3] == iomode:
+                        fs_set.add(key[1])
+            return sorted(list(fs_set))
+        else:
+            data = self.parser.search_data([media, "*", bench, "*", iomode])
+            fs_set = set()
+            for kd in data:
+                fs = kd[0][1]
+                if fs not in self.EXCLUDED_FS:
+                    fs_set.add(fs)
+            #remove tmpfs - to see more acurate comparision between storage fses
+    #        fs_set.remove("tmpfs");
+            return sorted(list(fs_set))
+        
     def _gen_pdf(self, gp_file):
         subprocess.call("cd %s; gnuplot %s" %
                         (self.out_dir, os.path.basename(gp_file)),
@@ -171,88 +227,99 @@ class Plotter(object):
                   end="", file=self.out)
         print("", file=self.out)
 
-    def _plot_sc_data_matplotlib(self, media, benches, iomode):
+    def _plot_sc_data_matplotlib(self, media, benches, iomode, gen_dat, plot):
         def _get_sc_style(fs):
             return "with lp ps 0.5"
 
         def _get_data_file(fs):
             return "%s:%s:%s:%s.dat" % (media, fs, bench, iomode)
-
-        for bench in benches:
-            # check if there are data
-            fs_list = self._get_fs_list(media, bench, iomode)
-            if fs_list == []:
-                return
-            
-            # gen sc data files
-            for fs in fs_list:
-                data = self.parser.search_data([media, fs, bench, "*", iomode])
-                if data == []:
-                    continue
-                data_file = os.path.join(self.out_dir, _get_data_file(fs))
-
-                with open(data_file, "w") as out:
-                    print("# %s:%s:%s:%s:*" % (media, fs, bench, iomode), file=out)
-                    for d_kv in data:
-                        d_kv = d_kv[1]
-                        if int(d_kv["ncpu"]) > self.ncore:
-                            break
-                        if "fio" in bench:
-                            print("%s %s" %
-                                (d_kv["ncpu"], float(d_kv["works/sec"])/self.FIO_UNIT),
-                                file=out)
-                        elif "silversearcher" in bench:
-                            print("%s %s" %
-                                (d_kv["ncpu"], float(d_kv["works/sec"])/self.SILVERSEARCHER_UNIT),
-                                file=out)
-                        else:
-                            print("%s %s" %
-                                (d_kv["ncpu"], float(d_kv["works/sec"])/self.UNIT),
-                                file=out)
-        # color
-        c = np.array([[102, 194, 165], [252, 141, 98], [141, 160, 203], 
-                [231, 138, 195], [166,216,84], [255, 217, 47],
-                [229, 196, 148], [179, 179, 179]])
-        c  = c/255
-        markers = ['H', '^', '>', 'D', 'o', 's']
         
-        # gen gp file
-        fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 4))
-        for i, bench in enumerate(benches):
-            if len(benches) == 1:
-                ax = axs
-            else:
-                ax = axs[i]
+        fs_list = []
+
+        if gen_dat:
+            for bench in benches:
+                # check if there are data
+                fs_list = self._get_fs_list(media, bench, iomode)
+                if fs_list == []:
+                    return
+                # gen sc data files
+                for fs in fs_list:
+                    data = self.parser.search_data([media, fs, bench, "*", iomode])
+                    if data == []:
+                        continue
+                    data_file = os.path.join(self.out_dir, _get_data_file(fs))
+
+                    with open(data_file, "w") as out:
+                        print("# %s:%s:%s:%s:*" % (media, fs, bench, iomode), file=out)
+                        for d_kv in data:
+                            d_kv = d_kv[1]
+                            if int(d_kv["ncpu"]) > self.ncore:
+                                break
+                            if "fio" in bench:
+                                print("%s %s" %
+                                    (d_kv["ncpu"], float(d_kv["works/sec"])/self.FIO_UNIT),
+                                    file=out)
+                            elif "silversearcher" in bench:
+                                print("%s %s" %
+                                    (d_kv["ncpu"], float(d_kv["works/sec"])/self.SILVERSEARCHER_UNIT),
+                                    file=out)
+                            else:
+                                print("%s %s" %
+                                    (d_kv["ncpu"], float(d_kv["works/sec"])/self.UNIT),
+                                    file=out)
+                                
+        if plot:
+            for bench in benches:
+                # check if there are data
+                fs_list = self._get_fs_list(media, bench, iomode)
+                if fs_list == []:
+                    print("No data for %s" % bench)
+                    return
+            # color
+            c = np.array([[102, 194, 165], [252, 141, 98], [141, 160, 203], 
+                    [231, 138, 195], [166,216,84], [255, 217, 47],
+                    [229, 196, 148], [179, 179, 179]])
+            c  = c/255
+            markers = ['H', '^', '>', 'D', 'o', 's']
             
-            fs = fs_list[0]
+            # gen gp file
+            fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 4))
+            for i, bench in enumerate(benches):
+                if len(benches) == 1:
+                    ax = axs
+                else:
+                    ax = axs[i]
+                
+                fs = fs_list[0]
 
-            dat = np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True)
+                dat = np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True)
 
-            ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
-            for i, fs in enumerate(fs_list[1:]):
-                ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[i+1], marker=markers[i+1], lw=3, mec='black', markersize=8, alpha=1)
-            
-            ax.set_title(bench.replace("_", " "))
-            ax.grid(axis='y', linestyle='-.')
-            ax.set_xticks(dat[0].astype(int))
-            ax.set_xlabel("# Threads")
-            if "fio" in bench:
-                ax.set_ylabel("MiB/sec")
-            elif "silversearcher" in bench:
-                ax.set_ylabel("K ops/sec")
-            else:
-                ax.set_ylabel("M ops/sec")
+                ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
+                for i, fs in enumerate(fs_list[1:]):
+                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[i+1], marker=markers[i+1], lw=3, mec='black', markersize=8, alpha=1)
+                
+                ax.set_title(bench.replace("_", " "))
+                ax.grid(axis='y', linestyle='-.')
+                ax.set_xticks(dat[0].astype(int))
+                ax.set_xlabel("# Threads")
+                if "fio" in bench:
+                    ax.set_ylabel("MiB/sec")
+                elif "silversearcher" in bench:
+                    ax.set_ylabel("K ops/sec")
+                else:
+                    ax.set_ylabel("M ops/sec")
 
-            handles, labels = ax.get_legend_handles_labels()
+                handles, labels = ax.get_legend_handles_labels()
 
-        fig.legend(handles, labels, loc=9, ncol=len(fs_list), frameon=False)
-        fig.tight_layout()
-        fig.subplots_adjust(top=0.8)
+            fig.legend(handles, labels, loc=9, ncol=len(fs_list), frameon=False)
+            fig.tight_layout()
+            fig.subplots_adjust(top=0.8)
 
-        save_name = "_".join(benches)
-        plt.savefig(os.path.join(self.out_dir, "%s.png" % save_name))
-        plt.savefig(os.path.join(self.out_dir, "%s.svg" % save_name))
-        plt.close()
+            save_name = "_".join(benches)
+            plt.savefig(os.path.join(self.out_dir, "%s.png" % save_name))
+            plt.savefig(os.path.join(self.out_dir, "%s.svg" % save_name))
+            plt.savefig(os.path.join(self.out_dir, "%s.pdf" % save_name))
+            plt.close()
 
     def _plot_util_data(self, media, ncore, bench, iomode):
         print("", file=self.out)
@@ -316,13 +383,14 @@ class Plotter(object):
         self.out.close()
         self._gen_pdf(self.out_file)
 
-    def plot_sc_matplotlib(self, out_dir):
+    def plot_sc_matplotlib(self, out_dir, gen_dat=True, plot=True):
         bench_groups = [["DRBL", "DRBM", "DRBH", "DWOL", "DWOM"], 
                        ["DWAL", "DWSL"], 
                        ["fio_zipf_sync", "fio_zipf_mmap"], 
                        ["MRDL", "MRDM"], 
                        ["MWCL", "MWCM"], 
-                       ["filebench_varmail", "filebench_oltp", "filebench_fileserver", "filebench_webserver"]]
+                       ["MWRL", "MWRM"],
+                       ["filebench_varmail", "filebench_oltp", "filebench_fileserver", "filebench_webserver", "filebench_webproxy", "filebench_fileserver-1k"]]
         
         self.out_dir  = out_dir
         subprocess.call("mkdir -p %s" % self.out_dir, shell=True)
@@ -333,7 +401,7 @@ class Plotter(object):
         for media in self.config["media"]:
             for bench in self.config["bench"]:
                 for iomode in self.config["iomode"]:
-                    self._plot_sc_data_matplotlib(media, [bench], iomode)
+                    self._plot_sc_data_matplotlib(media, [bench], iomode, gen_dat, plot)
 
         # plot group
         for media in self.config["media"]:
@@ -341,7 +409,7 @@ class Plotter(object):
                 for iomode in self.config["iomode"]:
                     filtered = [bench for bench in group if bench in self.config["bench"]]
                     if len(filtered) > 0:
-                        self._plot_sc_data_matplotlib(media, filtered, iomode)
+                        self._plot_sc_data_matplotlib(media, filtered, iomode, gen_dat, plot)
 
         # self._plot_footer()
         # self.out.close()
@@ -433,8 +501,14 @@ if __name__ == "__main__":
     plotter = Plotter(opts.log)
     if opts.ty == "sc":
         plotter.plot_sc(opts.out)
-    elif opts.ty == "sc-matplotlib":
-        plotter.plot_sc_matplotlib(opts.out)
+    elif "sc-matplotlib" in opts.ty:
+        gen_dat = "gen" in opts.ty
+        plot = "plotter" in opts.ty
+        if not gen_dat and not plot: # legacy
+            gen_dat = True
+            plot = True
+        print("gen_dat:" + str(gen_dat) + ", plot:" + str(plot))
+        plotter.plot_sc_matplotlib(opts.out, gen_dat, plot)
     elif opts.ty == "util":
         plotter.plot_util(int(opts.ncore), opts.out)
     elif opts.ty == "cmpdev":

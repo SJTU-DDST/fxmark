@@ -3,6 +3,7 @@ import os
 import sys
 import signal
 import subprocess
+import optparse
 import datetime
 import tempfile
 import pdb
@@ -38,6 +39,8 @@ class Runner(object):
                  core_grain = CORE_COARSE_GRAIN, \
                  pfm_lvl = PerfMon.LEVEL_LOW, \
                  run_filter = ("*", "*", "*", "*", "*")):
+        (opts, args) = parser.parse_args()
+
         # run config
         self.CORE_GRAIN    = core_grain
         self.PERFMON_LEVEL = pfm_lvl
@@ -47,82 +50,118 @@ class Runner(object):
 
         # bench config
         self.DISK_SIZE     = "32G"
-        self.DURATION      = 30 # 30 seconds
+        self.DURATION      = 1 # 30 seconds
         self.DIRECTIOS     = ["bufferedio", "directio"]  # enable directio except tmpfs -> nodirectio 
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
-        self.FS_TYPES      = [
-                            # "NOVA",
-                            "EulerFS-S",
-                            "EulerFS", 
-                            "EXT4-dax",
-                            # "tmpfs",
-        # self.FS_TYPES      = ["tmpfs",
-        #                       "EXT4-dax", "ext4_no_jnl",
-                            #   "xfs",
-                            #   "btrfs", "f2fs",
-                              # "jfs", "reiserfs", "ext2", "ext3",
-        ]
+
+        if opts.ty == "NOVA":
+            self.FS_TYPES      = ["NOVA"]
+        else:
+            self.FS_TYPES      = [
+                                # "NOVA",
+                                "EulerFS-S",
+                                # "EulerFS", 
+                                # "EXT4-dax",
+                                # "tmpfs", # TODO: add EXT4, EXT4-DJ
+
+                                
+            # self.FS_TYPES      = ["tmpfs",
+            #                       "EXT4-dax", "ext4_no_jnl",
+                                #   "xfs",
+                                #   "btrfs", "f2fs",
+                                # "jfs", "reiserfs", "ext2", "ext3",
+            ]
         self.BENCH_TYPES   = [
-            # write/write
-            # "DWAL",
+            # # file
             # "DWOL",
             # "DWOM",
-            # "DWOH",
-            # "MMAPL",
-            # "MMAPM",
-            # "MMAPH",
-            # "DWSL",
-            # "MWRL",
-            # "MWRM",
-            "MWCL", # require 30s duration to stabilize
-            "MWCM",
-            # "MWUM", # crash
-            # "MWUL", # crash
-            # "DWTL",
-
-            # filebench
-            # "filebench_varmail",
-            # "filebench_oltp",
-            # "filebench_fileserver",
-            # "filebench_webserver",
-            # "filebench_randomwrite",
-            # "filebench_createfiles", # TODO: create empty files to test dir ops?
-
-            # dbench
-            # "dbench_client",
-
-            # read/read
-            # "MRPL",
-            # "MRPM",
-            # "MRPH",
-
-            # "MRDM",
-            # "MRDL",
             # "DRBH",
             # "DRBM",
             # "DRBL",
+            
+            # # dir
+            "MWCL", # require 30s duration to stabilize
+            "MWCM",
+            # "MRPL",
+            # "MRPM",
+            # "MRPH",
+            # "MRDM",
+            # "MRDL",
 
-            # read/write
-            # "MRPM_bg",
-            # "DRBM_bg",
-            # "MRDM_bg",
-            # "DRBH_bg",
-            # "DRBL_bg",
-            # "MRDL_bg",
+            # # filebench
+            # "filebench_varmail",
+            # "filebench_fileserver",
+            # "filebench_fileserver-1k",
+            # "filebench_webproxy",
 
-            # fio 
+            # # fio 
             # "fio_zipf_mmap", # mmap
             # "fio_zipf_sync",
-
-
-            # real world
-            # "silversearcher_kernel",
-
-            # rand
-            # "DWOM_rand",
-            # "pagefault",
+            # "dbench_client",
         ]
+        # self.BENCH_TYPES   = [
+        #     # write/write
+        #     # "DWAL",
+        #     "DWOL",
+        #     "DWOM",
+        #     # "DWOH",
+        #     # "MMAPL",
+        #     # "MMAPM",
+        #     # "MMAPH",
+        #     # "DWSL",
+        #     # "MWRL",
+        #     # "MWRM",
+        #     "MWCL", # require 30s duration to stabilize
+        #     "MWCM",
+        #     # "MWUM", # crash
+        #     # "MWUL", # crash
+        #     # "DWTL",
+
+        #     # filebench
+        #     "filebench_varmail",
+        #     # "filebench_oltp",
+        #     "filebench_fileserver",
+        #     "filebench_fileserver-1k",
+        #     # "filebench_webserver",
+        #     # "filebench_randomwrite",
+        #     # "filebench_createfiles", # TODO: create empty files to test dir ops?
+        #     "filebench_webproxy",
+
+        #     # dbench
+        #     # "dbench_client",
+
+        #     # read/read
+        #     "MRPL",
+        #     "MRPM",
+        #     "MRPH",
+
+        #     "MRDM",
+        #     "MRDL",
+        #     "DRBH",
+        #     "DRBM",
+        #     "DRBL",
+
+        #     # read/write
+        #     # "MRPM_bg",
+        #     # "DRBM_bg",
+        #     # "MRDM_bg",
+        #     # "DRBH_bg",
+        #     # "DRBL_bg",
+        #     # "MRDL_bg",
+
+        #     # fio 
+        #     "fio_zipf_mmap", # mmap
+        #     "fio_zipf_sync",
+
+
+        #     # real world
+        #     # "silversearcher_kernel",
+
+        #     # rand
+        #     # "DWOM_rand",
+        #     # "pagefault",
+        # ]
         self.BENCH_BG_SFX   = "_bg"
 
         # path config
@@ -176,7 +215,8 @@ class Runner(object):
         self.dev_null    = open("/dev/null", "a") if not self.DEBUG_OUT else None
         self.npcpu       = cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP
         self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL#,14,21,28,35,42,49,56 # 1,2,4,6,8,10,12,14,16 #1,4,8,12,16,20,24,28,32# [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
-        self.ncores      = [1,7,14,21,28,35,42,49,56] 
+        self.ncores = [1,2,4,8,12,16,20,24,28]
+        # self.ncores      = [1,7,14,21,28,35,42,49,56] 
         # self.ncores      = [1,2,4,8,16]
         # self.ncores      = [1,4,8,12,16]
         
@@ -425,7 +465,7 @@ class Runner(object):
         p = self.exec_cmd("sudo insmod /home/congyong/eulerfs/eulerfs.ko", self.dev_null)
         if p.returncode is not 0:
             return False
-
+        # dev_path = "/dev/pmem0" # test on dram
         p = self.exec_cmd(' '.join(["sudo mount -t eulerfs", "-o init",
                                     dev_path, mnt_path]),
                           self.dev_null)
@@ -499,8 +539,8 @@ class Runner(object):
     def gen_config(self):
         for ncore in sorted(self.ncores, reverse=True):
             for bench in self.BENCH_TYPES:
-                if "fio" in bench and ncore > 16: # fio does not support > 16 cores
-                    continue
+                # if "fio" in bench and ncore > 16: # fio does not support > 16 cores
+                #     continue
 
                 for media in self.MEDIA_TYPES:
                     for dio in self.DIRECTIOS:
@@ -510,9 +550,16 @@ class Runner(object):
                                 continue
                             if self._match_config(self.FILTER, \
                                                   (media, fs, bench, str(ncore), dio)):
-                                if fs == "tmpfs":
-                                    logging.warning("Setting tmpfs to mem & directio")
-                                    yield("mem", fs, bench, ncore, "directio")
+                                # if fs == "tmpfs":
+                                #     logging.warning("Setting tmpfs to mem & directio")
+                                #     yield("mem", fs, bench, ncore, "directio")
+                                # else:
+                                if fs == "NOVA":
+                                    print("# INFO: NOVA requires directio")
+                                    yield(media, fs, bench, ncore, "directio")
+                                elif "EulerFS" in fs:
+                                    print("# INFO: EulerFS requires bufferedio")
+                                    yield(media, fs, bench, ncore, "bufferedio")
                                 else:
                                     yield(media, fs, bench, ncore, dio)
             print("\n\n\n")
@@ -588,13 +635,13 @@ class Runner(object):
                 nfg = ncore - nbg
 
                 if self.DRYRUN:
-                    self.log("## %s:%s:%s:%s:%s" % (media, fs, bench, nfg, dio))
+                    self.log("## %s:%s:%s:%s:directio" % (media, fs, bench, nfg)) # plot directio & bufferedio together
                     continue
                 self.prepre_work(ncore)
                 if not self.mount(media, fs, self.test_root):
                     self.log("# Fail to mount %s on %s." % (fs, media))
                     continue
-                self.log("## %s:%s:%s:%s:%s" % (media, fs, bench, nfg, dio))
+                self.log("## %s:%s:%s:%s:directio" % (media, fs, bench, nfg)) # plot directio & bufferedio together
                 self.pre_work()
                 self.fxmark(media, fs, bench, ncore, nfg, nbg, dio)
                 self.post_work()
@@ -624,6 +671,9 @@ def confirm_media_path():
     # print("\n\n")
 
 if __name__ == "__main__":
+    parser = optparse.OptionParser()
+    parser.add_option("--ty")
+    
     # config parameters
     # -----------------
     #
@@ -649,7 +699,7 @@ if __name__ == "__main__":
         #  ("mem", "tmpfs", "MWCM", "*", "directio")),
         #  ("mem", "*", "DWOL", "80", "directio")),
         # ("nvme", "*", "*", "*", "directio")),
-        ("nvme", "*", "*", "*", "bufferedio")),# NOVA requires directio, EulerFS-S requires bufferedio
+        ("nvme", "*", "*", "*", "directio")),# NOVA requires directio, EulerFS-S requires bufferedio
         # ("mem", "tmpfs", "filebench_varmail", "32", "directio")),
         # (Runner.CORE_COARSE_GRAIN,
         #  PerfMon.LEVEL_PERF_RECORD,

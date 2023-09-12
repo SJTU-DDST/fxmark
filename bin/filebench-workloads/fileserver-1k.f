@@ -19,17 +19,17 @@
 # CDDL HEADER END
 #
 #
-# Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
 
 set $dir=/tmp
 set $nfiles=10000
-set $meandirwidth=1000000
-set $meanfilesize=16k
-set $nthreads=16
+set $meandirwidth=20
+set $meanfilesize=1k
+set $nthreads=50
 set $iosize=1m
-set $meanappendsize=16k
+set $meanappendsize=1k
 
 define fileset name=bigfileset,path=$dir,size=$meanfilesize,entries=$nfiles,dirwidth=$meandirwidth,prealloc=80
 
@@ -37,31 +37,30 @@ define process name=filereader,instances=1
 {
   thread name=filereaderthread,memsize=10m,instances=$nthreads
   {
-    flowop deletefile name=deletefile1,filesetname=bigfileset
-    flowop createfile name=createfile2,filesetname=bigfileset,fd=1
-    flowop appendfilerand name=appendfilerand2,iosize=$meanappendsize,fd=1
-    #flowop fsync name=fsyncfile2,fd=1
+    flowop createfile name=createfile1,filesetname=bigfileset,fd=1
+    flowop writewholefile name=wrtfile1,srcfd=1,fd=1,iosize=$iosize
+    flowop closefile name=closefile1,fd=1
+    flowop openfile name=openfile1,filesetname=bigfileset,fd=1
+    flowop appendfilerand name=appendfilerand1,iosize=$meanappendsize,fd=1
     flowop closefile name=closefile2,fd=1
-    flowop openfile name=openfile3,filesetname=bigfileset,fd=1
-    flowop readwholefile name=readfile3,fd=1,iosize=$iosize
-    flowop appendfilerand name=appendfilerand3,iosize=$meanappendsize,fd=1
-    #flowop fsync name=fsyncfile3,fd=1
+    flowop openfile name=openfile2,filesetname=bigfileset,fd=1
+    flowop readwholefile name=readfile1,fd=1,iosize=$iosize
     flowop closefile name=closefile3,fd=1
-    flowop openfile name=openfile4,filesetname=bigfileset,fd=1
-    flowop readwholefile name=readfile4,fd=1,iosize=$iosize
-    flowop closefile name=closefile4,fd=1
+    flowop deletefile name=deletefile1,filesetname=bigfileset
+    flowop statfile name=statfile1,filesetname=bigfileset
   }
 }
 
-#echo  "Varmail Version 3.0 personality successfully loaded"
+#echo  "File-server Version 3.0 personality successfully loaded"
 #usage "#usage: set \$dir=<dir>"
-#usage "       set \$meanfilesize=<size>    defaults to $meanfilesize"
-#usage "       set \$nfiles=<value>     defaults to $nfiles"
-#usage "       set \$nthreads=<value>   defaults to $nthreads"
-#usage "       set \$meanappendsize=<value> defaults to $meanappendsize"
+#usage "       set \$meanfilesize=<size>     defaults to $meanfilesize"
+#usage "       set \$nfiles=<value>      defaults to $nfiles"
+#usage "       set \$nthreads=<value>    defaults to $nthreads"
+#usage "       set \$meanappendsize=<value>  defaults to $meanappendsize"
 #usage "       set \$iosize=<size>  defaults to $iosize"
 #usage "       set \$meandirwidth=<size> defaults to $meandirwidth"
 #usage "       run runtime (e.g. run 60)"
+
 
 ####################################
 # re-configured values by fxmark
@@ -69,3 +68,4 @@ define process name=filereader,instances=1
 # set $dir=[test partition]
 # set $nthreads=[$cpu * 2]
 # run [benchmark time]
+
