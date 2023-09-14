@@ -296,7 +296,12 @@ class Plotter(object):
 
                 ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
                 for i, fs in enumerate(fs_list[1:]):
-                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[i+1], marker=markers[i+1], lw=3, mec='black', markersize=8, alpha=1)
+                    label_fs = fs
+                    if fs == "EulerFS-S":
+                        label_fs = "BorschFS"
+                    elif fs == "EulerFS":
+                        label_fs = "SoupFS"
+                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=label_fs, color=c[i+1], marker=markers[i+1], lw=3, mec='black', markersize=8, alpha=1)
                 
                 ax.set_title(bench.replace("_", " "))
                 ax.grid(axis='y', linestyle='-.')

@@ -50,7 +50,7 @@ class Runner(object):
 
         # bench config
         self.DISK_SIZE     = "32G"
-        self.DURATION      = 1 # 30 seconds
+        self.DURATION      = 30 # 30 seconds
         self.DIRECTIOS     = ["bufferedio", "directio"]  # enable directio except tmpfs -> nodirectio 
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
@@ -216,6 +216,7 @@ class Runner(object):
         self.npcpu       = cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP
         self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL#,14,21,28,35,42,49,56 # 1,2,4,6,8,10,12,14,16 #1,4,8,12,16,20,24,28,32# [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
         self.ncores = [1,2,4,8,12,16,20,24,28]
+        # self.ncores = [28]
         # self.ncores      = [1,7,14,21,28,35,42,49,56] 
         # self.ncores      = [1,2,4,8,16]
         # self.ncores      = [1,4,8,12,16]

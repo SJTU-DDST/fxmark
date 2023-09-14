@@ -34,6 +34,7 @@ extern struct bench_operations n_dir_ins_ops;
 extern struct bench_operations n_jnl_cmt_ops;
 extern struct bench_operations n_mtime_upt_ops;
 extern struct bench_operations n_fallback_ops;
+extern struct bench_operations n_filetest_ops;
 extern struct bench_operations n_MMAPL_ops;
 extern struct bench_operations n_MMAPM_ops;
 extern struct bench_operations n_MMAPH_ops;
