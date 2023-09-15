@@ -88,6 +88,7 @@ class Runner(object):
             # "MRPH",
             # "MRDM",
             # "MRDL",
+            # "filetest",
 
             # # filebench
             # "filebench_varmail",
