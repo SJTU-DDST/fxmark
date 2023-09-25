@@ -250,7 +250,12 @@ class Plotter(object):
                     data_file = os.path.join(self.out_dir, _get_data_file(fs))
 
                     with open(data_file, "w") as out:
-                        print("# %s:%s:%s:%s:*" % (media, fs, bench, iomode), file=out)
+                        duration = 1.0
+                        for d_kv in data:
+                            d_kv = d_kv[1]
+                            duration = float(d_kv["secs"])
+                            # print(duration)
+                        print("# %s:%s:%s:%s:*:%f" % (media, fs, bench, iomode, duration), file=out) # add duration
                         for d_kv in data:
                             d_kv = d_kv[1]
                             if int(d_kv["ncpu"]) > self.ncore:
@@ -283,10 +288,15 @@ class Plotter(object):
             markers = ['H', '^', '>', 'D', 'o', 's']
             
             # gen gp file
-            fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 4))
+            if len(benches) == 4:
+                fig, axs = plt.subplots(2, 2, figsize=(8, 8))
+            else:  
+                fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 4))
             for i, bench in enumerate(benches):
                 if len(benches) == 1:
                     ax = axs
+                elif len(benches) == 4: 
+                    ax = axs[i//2][i%2]
                 else:
                     ax = axs[i]
                 
@@ -295,15 +305,20 @@ class Plotter(object):
                 dat = np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True)
 
                 ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
-                for i, fs in enumerate(fs_list[1:]):
+                for j, fs in enumerate(fs_list[1:]):
                     label_fs = fs
                     if fs == "EulerFS-S":
                         label_fs = "BorschFS"
                     elif fs == "EulerFS":
                         label_fs = "SoupFS"
-                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=label_fs, color=c[i+1], marker=markers[i+1], lw=3, mec='black', markersize=8, alpha=1)
+                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=label_fs, color=c[j+1], marker=markers[j+1], lw=3, mec='black', markersize=8, alpha=1)
                 
-                ax.set_title(bench.replace("_", " "))
+                title = bench.replace("_", " ")
+                # add (a) (b) (c) (d) before title according to i
+                if len(benches) == 4:
+                    title = "(" + chr(ord('a') + i) + ") " + title
+
+                ax.set_title(title)
                 ax.grid(axis='y', linestyle='-.')
                 ax.set_xticks(dat[0].astype(int))
                 ax.set_xlabel("# Threads")
@@ -318,11 +333,14 @@ class Plotter(object):
 
             fig.legend(handles, labels, loc=9, ncol=len(fs_list), frameon=False)
             fig.tight_layout()
-            fig.subplots_adjust(top=0.8)
+            if len(benches) == 4:
+                fig.subplots_adjust(top=0.9)
+            else:
+                fig.subplots_adjust(top=0.8)
 
             save_name = "_".join(benches)
             plt.savefig(os.path.join(self.out_dir, "%s.png" % save_name))
-            plt.savefig(os.path.join(self.out_dir, "%s.svg" % save_name))
+            # plt.savefig(os.path.join(self.out_dir, "%s.svg" % save_name))
             plt.savefig(os.path.join(self.out_dir, "%s.pdf" % save_name))
             plt.close()
 
@@ -395,6 +413,7 @@ class Plotter(object):
                        ["MRDL", "MRDM"], 
                        ["MWCL", "MWCM"], 
                        ["MWRL", "MWRM"],
+                       ["DWOL", "DWOM", "MWCL", "MWCM"],
                        ["filebench_varmail", "filebench_oltp", "filebench_fileserver", "filebench_webserver", "filebench_webproxy", "filebench_fileserver-1k"]]
         
         self.out_dir  = out_dir
