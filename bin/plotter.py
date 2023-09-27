@@ -293,6 +293,11 @@ class Plotter(object):
             else:  
                 fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 4))
             for i, bench in enumerate(benches):
+                fs_list = self._get_fs_list(media, bench, iomode)
+                if fs_list == []:
+                    print("No data for %s" % bench)
+                    return
+
                 if len(benches) == 1:
                     ax = axs
                 elif len(benches) == 4: 

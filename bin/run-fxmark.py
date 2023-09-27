@@ -27,9 +27,9 @@ def catch_ctrl_C(sig, frame):
 class Runner(object):
     # media path
     LOOPDEV = "/dev/loop7"
-    NVMEDEV = "/dev/pmem2.1"
-    HDDDEV  = "/dev/pmem2.1"
-    SSDDEV  = "/dev/pmem2.1"
+    NVMEDEV = "/dev/pmem1.3"
+    HDDDEV  = "/dev/pmem1.3"
+    SSDDEV  = "/dev/pmem1.3"
 
     # test core granularity
     CORE_FINE_GRAIN   = 0
@@ -95,6 +95,8 @@ class Runner(object):
             # "filebench_fileserver",
             # "filebench_fileserver-1k",
             # "filebench_webproxy",
+            # "filebench_oltp",
+            # "filebench_webserver",
 
             # # fio 
             # "fio_zipf_mmap", # mmap
@@ -116,7 +118,7 @@ class Runner(object):
         #     "MWCL", # require 30s duration to stabilize
         #     "MWCM",
         #     # "MWUM", # crash
-        #     # "MWUL", # crash
+        #     # "MWUL", # crash https://github.com/NVSL/linux-nova/issues/77
         #     # "DWTL",
 
         #     # filebench
@@ -323,6 +325,7 @@ class Runner(object):
         self.exec_cmd(cmd, self.dev_null)
 
     def set_cpus(self, ncore):
+        return
         if self.active_ncore == ncore:
             return
         self.active_ncore = ncore
