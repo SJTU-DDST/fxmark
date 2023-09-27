@@ -325,7 +325,6 @@ class Runner(object):
         self.exec_cmd(cmd, self.dev_null)
 
     def set_cpus(self, ncore):
-        return
         if self.active_ncore == ncore:
             return
         self.active_ncore = ncore

@@ -419,6 +419,7 @@ class Plotter(object):
                        ["MWCL", "MWCM"], 
                        ["MWRL", "MWRM"],
                        ["DWOL", "DWOM", "MWCL", "MWCM"],
+                       ["filebench_varmail", "filebench_fileserver", "filebench_webproxy", "filebench_fileserver-1k"],
                        ["filebench_varmail", "filebench_oltp", "filebench_fileserver", "filebench_webserver", "filebench_webproxy", "filebench_fileserver-1k"]]
         
         self.out_dir  = out_dir
