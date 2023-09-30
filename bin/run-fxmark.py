@@ -61,8 +61,8 @@ class Runner(object):
             self.FS_TYPES      = [
                                 # "NOVA",
                                 "EulerFS-S",
-                                # "EulerFS", 
-                                # "EXT4-dax",
+                                "EulerFS", 
+                                "EXT4-dax",
                                 # "tmpfs", # TODO: add EXT4, EXT4-DJ
 
                                 
@@ -81,8 +81,8 @@ class Runner(object):
             # "DRBL",
             
             # # dir
-            "MWCL", # require 30s duration to stabilize
-            "MWCM",
+            # "MWCL", # require 30s duration to stabilize
+            # "MWCM",
             # "MRPL",
             # "MRPM",
             # "MRPH",
@@ -92,6 +92,7 @@ class Runner(object):
 
             # # filebench
             # "filebench_varmail",
+            # "filebench_varmail-1k",
             # "filebench_fileserver",
             # "filebench_fileserver-1k",
             # "filebench_webproxy",
@@ -100,7 +101,7 @@ class Runner(object):
 
             # # fio 
             # "fio_zipf_mmap", # mmap
-            # "fio_zipf_sync",
+            "fio_zipf_sync",
             # "dbench_client",
         ]
         # self.BENCH_TYPES   = [

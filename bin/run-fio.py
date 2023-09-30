@@ -37,6 +37,8 @@ class FIO(object):
                                  os.environ.get('PERFMON_LFILE', "x")])
         self.perf_msg = None
 
+        self.DEBUG_OUT     = False
+
     def __del__(self):
         # clean up
         try:
@@ -61,13 +63,15 @@ class FIO(object):
 
     def _run_fio(self):
         with tempfile.NamedTemporaryFile(delete=False) as self.bench_out:
-            cmd = "sudo fio --name=rand_rw_4k --ioengine=mmap --rw=randrw --rwmixread=50 --random_distribution=zipf:0.88 --numjobs=%s --bs=4k --size=1g --runtime=%s --time_based=1 --gtod_reduce=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
+            cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --rw=randwrite --random_distribution=zipf:1.04 --numjobs=%s --bs=4k --size=1m --runtime=%s --time_based=1 --group_reporting=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
             if "sync" in self.workload:#--fsync=256
-                cmd = "sudo fio --name=rand_rw_4k --ioengine=sync  --rw=randrw --rwmixread=50 --random_distribution=zipf:0.88 --numjobs=%s --bs=4k --size=1g --runtime=%s --time_based=1 --gtod_reduce=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
+                cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --random_distribution=zipf:1.04 --numjobs=%s --bs=4k --size=1m --runtime=%s --time_based=1 --group_reporting=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
             p = self._exec_cmd(cmd, subprocess.PIPE)
             while True:
                 for l in p.stdout.readlines():
-                    # print(l)
+                    if self.DEBUG_OUT:
+                        print(l)
+
                     self.bench_out.write("#@ ".encode("utf-8"))
                     self.bench_out.write(l)
                     l_str = str(l)
