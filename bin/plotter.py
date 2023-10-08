@@ -188,7 +188,10 @@ class Plotter(object):
                 print("# %s:%s:%s:%s:*" % (media, fs, bench, iomode), file=out)
                 for d_kv in data:
                     d_kv = d_kv[1]
-                    if int(d_kv["ncpu"]) > self.ncore:
+                    ncpu = float(d_kv["ncpu"])
+                    if ncpu.is_integer():
+                        ncpu = int(ncpu)
+                    if ncpu > self.ncore:
                         break
                     if "fio" in bench:
                         print("%s %s" %
@@ -258,7 +261,10 @@ class Plotter(object):
                         print("# %s:%s:%s:%s:*:%f" % (media, fs, bench, iomode, duration), file=out) # add duration
                         for d_kv in data:
                             d_kv = d_kv[1]
-                            if int(d_kv["ncpu"]) > self.ncore:
+                            ncpu = float(d_kv["ncpu"])
+                            if ncpu.is_integer():
+                                ncpu = int(ncpu)
+                            if ncpu > self.ncore:
                                 break
                             if "fio" in bench:
                                 print("%s %s" %
@@ -289,7 +295,8 @@ class Plotter(object):
             
             # gen gp file
             if len(benches) == 4:
-                fig, axs = plt.subplots(2, 2, figsize=(8, 8))
+                plt.rcParams.update({'font.size': 12})
+                fig, axs = plt.subplots(2, 2, figsize=(8, 6))
             else:  
                 fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 4))
             for i, bench in enumerate(benches):
@@ -320,13 +327,19 @@ class Plotter(object):
                 
                 title = bench.replace("_", " ")
                 # add (a) (b) (c) (d) before title according to i
-                if len(benches) == 4:
-                    title = "(" + chr(ord('a') + i) + ") " + title
+                # if len(benches) == 4:
+                title = "(" + chr(ord('a') + i) + ") " + title
 
                 ax.set_title(title)
                 ax.grid(axis='y', linestyle='-.')
-                ax.set_xticks(dat[0].astype(int))
-                ax.set_xlabel("# Threads")
+
+                if np.any(dat[0] % 1 != 0):
+                    print("float xticks found")
+                    ax.set_xticks(dat[0].astype(float))
+                    ax.set_xlabel("Zipf parameter")
+                else:
+                    ax.set_xticks(dat[0].astype(int))
+                    ax.set_xlabel("# Threads")
                 if "fio" in bench:
                     ax.set_ylabel("MiB/sec")
                 elif "silversearcher" in bench:

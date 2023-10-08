@@ -55,14 +55,23 @@ class Runner(object):
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
 
+        self.ncores = [1,2,4,8,12,16,20,24,28]
+        # self.ncores = [28]
+        # self.ncores      = [1,7,14,21,28,35,42,49,56] 
+        # self.ncores      = [1,2,4,8,16]
+        # self.ncores      = [1,4,8,12,16]
+
+        # self.ncores = [1.04,0.88,0.71,0.44] # zipf
+        # self.ncores = [0.5,0.6,0.7,0.8,0.9,1.1,1.2,1.3,1.4] # zipf FOR FIO!!!
+
         if opts.ty == "NOVA":
             self.FS_TYPES      = ["NOVA"]
         else:
             self.FS_TYPES      = [
                                 # "NOVA",
                                 "EulerFS-S",
-                                "EulerFS", 
-                                "EXT4-dax",
+                                # "EulerFS", 
+                                # "EXT4-dax",
                                 # "tmpfs", # TODO: add EXT4, EXT4-DJ
 
                                 
@@ -75,7 +84,7 @@ class Runner(object):
         self.BENCH_TYPES   = [
             # # file
             # "DWOL",
-            # "DWOM",
+            "DWOM",
             # "DRBH",
             # "DRBM",
             # "DRBL",
@@ -101,7 +110,7 @@ class Runner(object):
 
             # # fio 
             # "fio_zipf_mmap", # mmap
-            "fio_zipf_sync",
+            # "fio_zipf_sync",
             # "dbench_client",
         ]
         # self.BENCH_TYPES   = [
@@ -219,11 +228,6 @@ class Runner(object):
         self.dev_null    = open("/dev/null", "a") if not self.DEBUG_OUT else None
         self.npcpu       = cpupol.PHYSICAL_CHIPS * cpupol.CORE_PER_CHIP
         self.nhwthr      = self.npcpu * cpupol.SMT_LEVEL#,14,21,28,35,42,49,56 # 1,2,4,6,8,10,12,14,16 #1,4,8,12,16,20,24,28,32# [1,2,4,8,16,24,28,32,40,48,56] # self.get_ncores() # 1,2,4,8,16,24,28,32,40,48,56
-        self.ncores = [1,2,4,8,12,16,20,24,28]
-        # self.ncores = [28]
-        # self.ncores      = [1,7,14,21,28,35,42,49,56] 
-        # self.ncores      = [1,2,4,8,16]
-        # self.ncores      = [1,4,8,12,16]
         
         self.test_root   = os.path.normpath(
             os.path.join(CUR_DIR, self.ROOT_NAME))
@@ -326,6 +330,7 @@ class Runner(object):
         self.exec_cmd(cmd, self.dev_null)
 
     def set_cpus(self, ncore):
+        return
         if self.active_ncore == ncore:
             return
         self.active_ncore = ncore

@@ -23,8 +23,17 @@ class FIO(object):
         self.bench_out = None
         # take configuration parameters
         self.workload = type_
-        self.ncore = int(ncore_)
+        self.ncore = 20 # int(ncore_) # we fix the ncore to 8, so that we can use ncore for zipf
         self.duration = int(duration_)
+
+        self.ZIPF = not float(ncore_).is_integer()
+
+        if self.ZIPF: # ncore_ is float, so we use it as zipf
+            self.zipf = float(ncore_)
+        else: # compatible with old version
+            self.zipf = 1.04
+            self.ncore = int(ncore_)
+            
         self.root = root_
         self.profbegin = profbegin_
         self.profend = profend_
@@ -63,9 +72,9 @@ class FIO(object):
 
     def _run_fio(self):
         with tempfile.NamedTemporaryFile(delete=False) as self.bench_out:
-            cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --rw=randwrite --random_distribution=zipf:1.04 --numjobs=%s --bs=4k --size=1m --runtime=%s --time_based=1 --group_reporting=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
-            if "sync" in self.workload:#--fsync=256
-                cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --random_distribution=zipf:1.04 --numjobs=%s --bs=4k --size=1m --runtime=%s --time_based=1 --group_reporting=1 --filename=%s/test.fio" % (self.ncore, self.duration, self.root)
+            cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --group_reporting=1 --direct=1 --filename=%s/test.fio" % (self.zipf, self.ncore, self.duration, self.root)
+            if "sync" in self.workload:#--fsync=256--rw=randwrite --random_distribution=zipf:%s 
+                cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
             p = self._exec_cmd(cmd, subprocess.PIPE)
             while True:
                 for l in p.stdout.readlines():
@@ -115,9 +124,14 @@ class FIO(object):
                     profile_data = l[1]
         except:
             pass
-        print("# ncpu secs works works/sec %s" % profile_name)
-        print("%s %s %s %s %s" %
-              (self.ncore, self.duration, work, work_sec, profile_data))
+        if self.ZIPF:
+            print("# ncpu secs works works/sec %s" % profile_name)
+            print("%s %s %s %s %s" %
+                (self.zipf, self.duration, work, work_sec, profile_data))
+        else:
+            print("# ncpu secs works works/sec %s" % profile_name)
+            print("%s %s %s %s %s" %
+                (self.ncore, self.duration, work, work_sec, profile_data))
 
     def _append_to_config(self, config_str):
         self._exec_cmd("echo \'%s\' >> %s" % (config_str, self.config.name)).wait()
