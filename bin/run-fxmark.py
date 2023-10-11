@@ -55,12 +55,13 @@ class Runner(object):
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
 
-        self.ncores = [1,2,4,8,12,16,20,24,28]
+        # self.ncores = [1,2,4,8,12,16,20,24,28]
         # self.ncores = [28]
         # self.ncores      = [1,7,14,21,28,35,42,49,56] 
         # self.ncores      = [1,2,4,8,16]
         # self.ncores      = [1,4,8,12,16]
 
+        self.ncores = [1.04, 0.1] # 1.04 means zipf, 0.1 means random, just a symbol, not for zipf parameter
         # self.ncores = [1.04,0.88,0.71,0.44] # zipf
         # self.ncores = [0.5,0.6,0.7,0.8,0.9,1.1,1.2,1.3,1.4] # zipf FOR FIO!!!
 
@@ -70,8 +71,8 @@ class Runner(object):
             self.FS_TYPES      = [
                                 # "NOVA",
                                 "EulerFS-S",
-                                # "EulerFS", 
-                                # "EXT4-dax",
+                                "EulerFS", 
+                                "EXT4-dax",
                                 # "tmpfs", # TODO: add EXT4, EXT4-DJ
 
                                 
@@ -84,7 +85,7 @@ class Runner(object):
         self.BENCH_TYPES   = [
             # # file
             # "DWOL",
-            "DWOM",
+            # "DWOM",
             # "DRBH",
             # "DRBM",
             # "DRBL",
@@ -109,8 +110,8 @@ class Runner(object):
             # "filebench_webserver",
 
             # # fio 
-            # "fio_zipf_mmap", # mmap
-            # "fio_zipf_sync",
+            "fio_zipf_mmap", # mmap
+            "fio_zipf_sync",
             # "dbench_client",
         ]
         # self.BENCH_TYPES   = [
@@ -607,11 +608,11 @@ class Runner(object):
             else: 
                 print("# INFO: DirectIO Enabled")
 
-        if "mmap" in bench and self.DURATION < 30:
-            duration = 30
-            print("# INFO: mmap bench requires at least 30s")
-        else:
-            duration = self.DURATION
+        # if "mmap" in bench and self.DURATION < 30:
+        #     duration = 30
+        #     print("# INFO: mmap bench requires at least 30s")
+        # else:
+        duration = self.DURATION
 
         cmd = ' '.join([self.fxmark_env(),
                         bin,

@@ -71,10 +71,19 @@ class FIO(object):
         return 0
 
     def _run_fio(self):
-        with tempfile.NamedTemporaryFile(delete=False) as self.bench_out:
-            cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --group_reporting=1 --direct=1 --filename=%s/test.fio" % (self.zipf, self.ncore, self.duration, self.root)
-            if "sync" in self.workload:#--fsync=256--rw=randwrite --random_distribution=zipf:%s 
-                cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
+        with tempfile.NamedTemporaryFile(delete=False) as self.bench_out: # --fsync=1
+            zipf = True
+            if self.zipf == 0.1:
+                zipf = False # 0.1 means random, just a symbol, not for zipf parameter
+
+            if zipf:
+                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
+                if "sync" in self.workload:#--fsync=256--rw=randwrite --random_distribution=zipf:%s 
+                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
+            else:
+                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.ncore, self.duration, self.root)
+                if "sync" in self.workload:#--fsync=256--rw=randwrite --random_distribution=zipf:%s 
+                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.ncore, self.duration, self.root)
             p = self._exec_cmd(cmd, subprocess.PIPE)
             while True:
                 for l in p.stdout.readlines():

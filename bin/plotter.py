@@ -292,13 +292,14 @@ class Plotter(object):
                     [229, 196, 148], [179, 179, 179]])
             c  = c/255
             markers = ['H', '^', '>', 'D', 'o', 's']
+            hat = ['|//','-\\\\','|\\\\','-//',"--","\\\\",'//',"xx"]
             
             # gen gp file
             if len(benches) == 4:
                 plt.rcParams.update({'font.size': 12})
                 fig, axs = plt.subplots(2, 2, figsize=(8, 6))
             else:  
-                fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 4))
+                fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 3))
             for i, bench in enumerate(benches):
                 fs_list = self._get_fs_list(media, bench, iomode)
                 if fs_list == []:
@@ -315,15 +316,45 @@ class Plotter(object):
                 fs = fs_list[0]
 
                 dat = np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True)
+                barplot = False
+                
+                # if dat[0] is not an array, set size to 1
+                if not isinstance(dat[0], np.ndarray):
+                    size = 1
+                else:
+                    size = len(dat[0])
 
-                ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
+                x = np.arange(size)
+                total_width = 0.3 # 0.9
+                n = len(fs_list)
+                width = total_width / n
+                x = x - (total_width - width) / 2
+
+                if np.any(dat[0] % 1 != 0): # zipfian, bar plot
+                    barplot = True
+                    # with np.printoptions(precision=3, suppress=True):
+                    #     print(bench, fs, dat)
+
+                if barplot:
+                    ax.bar(x, dat[1], width=width, edgecolor='black', lw=1.2, color=c[0], hatch=hat[0], label=fs)
+                else:
+                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
+
                 for j, fs in enumerate(fs_list[1:]):
+                    # if np.any(dat[0] % 1 != 0): # zipfian, bar plot
+                    #     with np.printoptions(precision=3, suppress=True):
+                    #         print(bench, fs, dat)
+
                     label_fs = fs
                     if fs == "EulerFS-S":
                         label_fs = "BorschFS"
                     elif fs == "EulerFS":
                         label_fs = "SoupFS"
-                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=label_fs, color=c[j+1], marker=markers[j+1], lw=3, mec='black', markersize=8, alpha=1)
+
+                    if barplot:
+                        ax.bar(x + width * (j+1), np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True)[1], width=width, edgecolor='black', lw=1.2, color=c[j+1], hatch=hat[j+1], label=label_fs)
+                    else:
+                        ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=label_fs, color=c[j+1], marker=markers[j+1], lw=3, mec='black', markersize=8, alpha=1)
                 
                 title = bench.replace("_", " ")
                 # add (a) (b) (c) (d) before title according to i
@@ -335,8 +366,16 @@ class Plotter(object):
 
                 if np.any(dat[0] % 1 != 0):
                     print("float xticks found")
-                    ax.set_xticks(dat[0].astype(float))
-                    ax.set_xlabel("Zipf parameter")
+                    if barplot:
+                        names = dat[0].astype(str)
+                        names = np.where(names == "0.1", "random", names) # 1.04 means zipf, 0.1 means random, just a symbol, not for zipf parameter
+                        names = np.where(names == "1.04", "zipfian", names)
+                        
+                        ax.set_xticks(range(size))
+                        ax.set_xticklabels(names)
+                    else: # disabled
+                        ax.set_xticks(dat[0].astype(float))
+                        ax.set_xlabel("Zipf parameter")
                 else:
                     ax.set_xticks(dat[0].astype(int))
                     ax.set_xlabel("# Threads")
