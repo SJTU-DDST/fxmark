@@ -31,7 +31,7 @@ class FIO(object):
         if self.ZIPF: # ncore_ is float, so we use it as zipf
             self.zipf = float(ncore_)
         else: # compatible with old version
-            self.zipf = 1.04
+            self.zipf = 1.2
             self.ncore = int(ncore_)
             
         self.root = root_
@@ -77,13 +77,13 @@ class FIO(object):
                 zipf = False # 0.1 means random, just a symbol, not for zipf parameter
 
             if zipf:
-                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
+                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
                 if "sync" in self.workload:#--fsync=256--rw=randwrite --random_distribution=zipf:%s 
-                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
-            else:
-                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.ncore, self.duration, self.root)
+                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
+            else:# --ramp_time=120
+                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.ncore, self.duration, self.root)
                 if "sync" in self.workload:#--fsync=256--rw=randwrite --random_distribution=zipf:%s 
-                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --numjobs=%s --bs=4k --size=64m --runtime=%s --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.ncore, self.duration, self.root)
+                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.ncore, self.duration, self.root)
             p = self._exec_cmd(cmd, subprocess.PIPE)
             while True:
                 for l in p.stdout.readlines():

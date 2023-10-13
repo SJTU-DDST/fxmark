@@ -61,8 +61,8 @@ class Runner(object):
         # self.ncores      = [1,2,4,8,16]
         # self.ncores      = [1,4,8,12,16]
 
-        self.ncores = [1.04, 0.1] # 1.04 means zipf, 0.1 means random, just a symbol, not for zipf parameter
-        # self.ncores = [1.04,0.88,0.71,0.44] # zipf
+        self.ncores = [1.2, 0.1] # 1.2 means zipf, 0.1 means random, just a symbol, not for zipf parameter
+        # self.ncores = [1.05,0.88,0.71,0.44] # zipf
         # self.ncores = [0.5,0.6,0.7,0.8,0.9,1.1,1.2,1.3,1.4] # zipf FOR FIO!!!
 
         if opts.ty == "NOVA":
@@ -110,7 +110,7 @@ class Runner(object):
             # "filebench_webserver",
 
             # # fio 
-            "fio_zipf_mmap", # mmap
+            # "fio_zipf_mmap", # mmap
             "fio_zipf_sync",
             # "dbench_client",
         ]
@@ -608,11 +608,11 @@ class Runner(object):
             else: 
                 print("# INFO: DirectIO Enabled")
 
-        # if "mmap" in bench and self.DURATION < 30:
-        #     duration = 30
-        #     print("# INFO: mmap bench requires at least 30s")
-        # else:
-        duration = self.DURATION
+        if "fio" in bench and self.DURATION < 30:
+            duration = 30
+            print("# INFO: fio bench requires at least 30s")
+        else:
+            duration = self.DURATION
 
         cmd = ' '.join([self.fxmark_env(),
                         bin,

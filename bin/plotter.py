@@ -330,7 +330,7 @@ class Plotter(object):
                 width = total_width / n
                 x = x - (total_width - width) / 2
 
-                if np.any(dat[0] % 1 != 0): # zipfian, bar plot
+                if np.any(dat[0] % 1 != 0): # skewed, bar plot
                     barplot = True
                     # with np.printoptions(precision=3, suppress=True):
                     #     print(bench, fs, dat)
@@ -341,7 +341,7 @@ class Plotter(object):
                     ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
 
                 for j, fs in enumerate(fs_list[1:]):
-                    # if np.any(dat[0] % 1 != 0): # zipfian, bar plot
+                    # if np.any(dat[0] % 1 != 0): # skewed, bar plot
                     #     with np.printoptions(precision=3, suppress=True):
                     #         print(bench, fs, dat)
 
@@ -368,8 +368,8 @@ class Plotter(object):
                     print("float xticks found")
                     if barplot:
                         names = dat[0].astype(str)
-                        names = np.where(names == "0.1", "random", names) # 1.04 means zipf, 0.1 means random, just a symbol, not for zipf parameter
-                        names = np.where(names == "1.04", "zipfian", names)
+                        names = np.where(names == "0.1", "random", names) # 1.2 means zipf, 0.1 means random, just a symbol, not for zipf parameter
+                        names = np.where(names == "1.2", "skewed", names)
                         
                         ax.set_xticks(range(size))
                         ax.set_xticklabels(names)
