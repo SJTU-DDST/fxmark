@@ -325,7 +325,7 @@ class Plotter(object):
                     size = len(dat[0])
 
                 x = np.arange(size)
-                total_width = 0.3 # 0.9
+                total_width = 0.9 # 0.9
                 n = len(fs_list)
                 width = total_width / n
                 x = x - (total_width - width) / 2
