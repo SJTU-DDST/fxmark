@@ -350,6 +350,10 @@ class Plotter(object):
                         label_fs = "BorschFS"
                     elif fs == "EulerFS":
                         label_fs = "SoupFS"
+                    elif fs == "pmfs":
+                        label_fs = "PMFS"
+                    elif fs == "EXT4-dax":
+                        label_fs = "ext4-DAX"
 
                     if barplot:
                         ax.bar(x + width * (j+1), np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True)[1], width=width, edgecolor='black', lw=1.2, color=c[j+1], hatch=hat[j+1], label=label_fs)
@@ -368,7 +372,7 @@ class Plotter(object):
                     print("float xticks found")
                     if barplot:
                         names = dat[0].astype(str)
-                        names = np.where(names == "0.1", "random", names) # 1.2 means zipf, 0.1 means random, just a symbol, not for zipf parameter
+                        names = np.where(names == "0.1", "uniform", names) # 1.2 means zipf, 0.1 means random, just a symbol, not for zipf parameter
                         names = np.where(names == "1.2", "skewed", names)
                         
                         ax.set_xticks(range(size))

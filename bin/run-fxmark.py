@@ -55,13 +55,13 @@ class Runner(object):
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
 
-        # self.ncores = [1,2,4,8,12,16,20,24,28]
+        self.ncores = [1,2,4,8,12,16,20,24,28] # fxmark & filebench
         # self.ncores = [28]
         # self.ncores      = [1,7,14,21,28,35,42,49,56] 
         # self.ncores      = [1,2,4,8,16]
         # self.ncores      = [1,4,8,12,16]
 
-        self.ncores = [1.2, 0.1] # 1.2 means zipf, 0.1 means random, just a symbol, not for zipf parameter
+        # self.ncores = [1.2, 0.1] # 1.2 means zipf, 0.1 means random, just a symbol, not for zipf parameter
         # self.ncores = [1.05,0.88,0.71,0.44] # zipf
         # self.ncores = [0.5,0.6,0.7,0.8,0.9,1.1,1.2,1.3,1.4] # zipf FOR FIO!!!
 
@@ -69,10 +69,12 @@ class Runner(object):
             self.FS_TYPES      = ["NOVA"]
         else:
             self.FS_TYPES      = [
+                                "SplitFS", # SplitFS can't run filebench with high duration, we use 1
+                                # "pmfs",
                                 # "NOVA",
-                                "EulerFS-S",
-                                "EulerFS", 
-                                "EXT4-dax",
+                                # "EulerFS-S",
+                                # "EulerFS", 
+                                # "EXT4-dax",
                                 # "tmpfs", # TODO: add EXT4, EXT4-DJ
 
                                 
@@ -101,17 +103,17 @@ class Runner(object):
             # "filetest",
 
             # # filebench
-            # "filebench_varmail",
+            "filebench_varmail",
             # "filebench_varmail-1k",
             # "filebench_fileserver",
             # "filebench_fileserver-1k",
             # "filebench_webproxy",
-            # "filebench_oltp",
+            # "filebench_oltp", # can't run on SplitFS
             # "filebench_webserver",
 
             # # fio 
             # "fio_zipf_mmap", # mmap
-            "fio_zipf_sync",
+            # "fio_zipf_sync",
             # "dbench_client",
         ]
         # self.BENCH_TYPES   = [
@@ -187,6 +189,9 @@ class Runner(object):
         self.FIO_NAME       = "run-fio.py"
         self.SILVERSEARCHER_NAME = "run-silversearcher.py"
         self.PERFMN_NAME    = "perfmon.py"
+        self.LD_LIBRARY_PATH = "/home/congyong/SplitFS/splitfs"
+        self.NVP_TREE_FILE = "/home/congyong/SplitFS/splitfs/bin/nvp_nvp.tree"
+        self.LD_PRELOAD = "/home/congyong/SplitFS/splitfs/libnvp.so"
 
         # fs config
         self.HOWTO_MOUNT = {
@@ -203,6 +208,8 @@ class Runner(object):
             "EulerFS": self.mount_eulerfs_plain,
             "EulerFS-S": self.mount_eulerfs_master,
             "NOVA":self.mount_NOVA,
+            "pmfs":self.mount_NOVA,
+            "SplitFS": self.mount_anyfs,
         }
         self.HOWTO_MKFS = {
             "ext2":"-F",
@@ -372,6 +379,9 @@ class Runner(object):
 
     def umount(self, where):
         while True:
+            os.environ.pop('LD_LIBRARY_PATH', None)
+            os.environ.pop('NVP_TREE_FILE', None)
+
             p = self.exec_cmd("sudo umount " + where, self.dev_null)
             if p.returncode is not 0:
                 break
@@ -426,7 +436,11 @@ class Runner(object):
         if not rc:
             return False
         
-        if fs == "EXT4-dax":
+        if fs == "SplitFS":
+            os.environ['LD_LIBRARY_PATH'] = self.LD_LIBRARY_PATH
+            os.environ['NVP_TREE_FILE'] = self.NVP_TREE_FILE
+        
+        if fs == "EXT4-dax" or fs == "SplitFS":
             fs = "ext4"
 
         p = self.exec_cmd("sudo mkfs." + fs
@@ -565,8 +579,8 @@ class Runner(object):
                                 #     logging.warning("Setting tmpfs to mem & directio")
                                 #     yield("mem", fs, bench, ncore, "directio")
                                 # else:
-                                if fs == "NOVA":
-                                    print("# INFO: NOVA requires directio")
+                                if fs == "NOVA" or fs == "pmfs":
+                                    print("# INFO: NOVA and pmfs requires directio")
                                     yield(media, fs, bench, ncore, "directio")
                                 elif "EulerFS" in fs:
                                     print("# INFO: EulerFS requires bufferedio")
@@ -613,18 +627,46 @@ class Runner(object):
             print("# INFO: fio bench requires at least 30s")
         else:
             duration = self.DURATION
-
-        cmd = ' '.join([self.fxmark_env(),
-                        bin,
-                        "--type", type,
-                        "--ncore", str(ncore),
-                        "--nbg",  str(nbg),
-                        "--duration", str(duration),
-                        "--directio", directio,
-                        "--root", self.test_root,
-                        "--profbegin", "\"%s\"" % self.perfmon_start,
-                        "--profend",   "\"%s\"" % self.perfmon_stop,
-                        "--proflog", self.perfmon_log])
+        if bench.startswith("filebench_"):
+            cmd = ' '.join([self.fxmark_env(),
+                            bin,
+                            "--type", type,
+                            "--ncore", str(ncore),
+                            "--nbg",  str(nbg),
+                            "--duration", str(duration),
+                            "--directio", directio,
+                            "--root", self.test_root,
+                            "--profbegin", "\"%s\"" % self.perfmon_start,
+                            "--profend",   "\"%s\"" % self.perfmon_stop,
+                            "--proflog", self.perfmon_log,
+                            "--fs", fs]) # for SplitFS
+        else:
+            if fs == "SplitFS":
+                cmd = ' '.join([self.fxmark_env(),
+                            "LD_PRELOAD="+self.LD_PRELOAD,
+                            bin,
+                            "--type", type,
+                            "--ncore", str(ncore),
+                            "--nbg",  str(nbg),
+                            "--duration", str(duration),
+                            "--directio", directio,
+                            "--root", self.test_root,
+                            "--profbegin", "\"%s\"" % self.perfmon_start,
+                            "--profend",   "\"%s\"" % self.perfmon_stop,
+                            "--proflog", self.perfmon_log])
+                print(cmd)
+            else:
+                cmd = ' '.join([self.fxmark_env(),
+                            bin,
+                            "--type", type,
+                            "--ncore", str(ncore),
+                            "--nbg",  str(nbg),
+                            "--duration", str(duration),
+                            "--directio", directio,
+                            "--root", self.test_root,
+                            "--profbegin", "\"%s\"" % self.perfmon_start,
+                            "--profend",   "\"%s\"" % self.perfmon_stop,
+                            "--proflog", self.perfmon_log])
         p = self.exec_cmd(cmd, self.redirect)
         if self.redirect:
             for l in p.stdout.readlines():

@@ -19,7 +19,7 @@ class FileBench(object):
     PERF_STR = "IO Summary: "
 
     def __init__(self, type_, ncore_, duration_, root_,
-                 profbegin_, profend_, proflog_):
+                 profbegin_, profend_, proflog_, fs_):
         self.config = None
         self.bench_out = None
         # take configuration parameters
@@ -37,6 +37,7 @@ class FileBench(object):
                                  "PERFMON_LFILE=%s" %
                                  os.environ.get('PERFMON_LFILE', "x")])
         self.perf_msg = None
+        self.fs = fs_
 
     def __del__(self):
         # clean up
@@ -64,7 +65,10 @@ class FileBench(object):
 
     def _run_filebench(self):
         with tempfile.NamedTemporaryFile(delete=False) as self.bench_out:
-            cmd = "sudo filebench -f %s" % self.config.name
+            if self.fs == "SplitFS":
+                cmd = "LD_PRELOAD=/home/congyong/SplitFS/splitfs/libnvp.so filebench -f %s" % self.config.name
+            else:
+                cmd = "sudo filebench -f %s" % self.config.name
             p = self._exec_cmd(cmd, subprocess.PIPE)
             while True:
                 for l in p.stdout.readlines():
@@ -167,6 +171,7 @@ if __name__ == "__main__":
     parser.add_option("--profbegin", help="profile begin command")
     parser.add_option("--profend", help="profile end command")
     parser.add_option("--proflog", help="profile log path")
+    parser.add_option("--fs", help="file system name") # for SplitFS
     (opts, args) = parser.parse_args()
 
     # check options
@@ -182,7 +187,7 @@ if __name__ == "__main__":
 
     # run benchmark
     filebench = FileBench(opts.type, opts.ncore, opts.duration, opts.root,
-                          opts.profbegin, opts.profend, opts.proflog)
+                          opts.profbegin, opts.profend, opts.proflog, opts.fs)
     rc = filebench.run()
     filebench.report()
     exit(rc)

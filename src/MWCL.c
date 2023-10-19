@@ -29,6 +29,7 @@ static int pre_work(struct worker *worker)
 
 static int main_work(struct worker *worker)
 {
+	// static char page[PAGE_SIZE];
 	char test_root[PATH_MAX];
 	struct bench *bench = worker->bench;
 	uint64_t iter;
@@ -43,6 +44,8 @@ static int main_work(struct worker *worker)
 			 test_root, iter);
 		if ((fd = open(file, O_CREAT | O_RDWR, S_IRWXU)) == -1)
 			goto err_out;
+	        // if (write(fd, page, sizeof(page)) == -1)
+			// goto err_out;
 		close(fd);
 	}
 out:
