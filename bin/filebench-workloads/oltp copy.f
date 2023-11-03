@@ -33,7 +33,7 @@ set $usermode=2
 set $filesize=100m
 set $memperthread=1m
 set $workingset=0
-set $workingsethot=20m
+set $workingsethot=10m
 set $logfilesize=10m
 set $nfiles=1 # change to 1?
 set $nlogfiles=1
@@ -62,7 +62,13 @@ define process name=dbwr,instances=$ndbwriters
   thread name=dbwr,memsize=$memperthread,useism
   {
     flowop write name=dbwrite-a,filesetname=datafiles,
-        iosize=$iosize,workingset=$workingsethot,random,iters=100,opennext,directio=$directio,dsync
+        iosize=$iosize,workingset=$workingset,random,iters=100,opennext,directio=$directio,dsync
+    flowop hog name=dbwr-hog,value=1
+    flowop semblock name=dbwr-block,value=10,highwater=2000
+    #flowop aiowait name=dbwr-aiowait
+
+    flowop write name=dbwrite-a,filesetname=datafiles,
+    iosize=$iosize,workingset=$workingset,random,iters=100,opennext,directio=$directio,dsync
     flowop hog name=dbwr-hog,value=1
     flowop semblock name=dbwr-block,value=10,highwater=2000
     #flowop aiowait name=dbwr-aiowait
@@ -74,7 +80,14 @@ define process name=shadow,instances=$nshadows
   thread name=shadow,memsize=$memperthread,useism
   {
     flowop read name=shadowread,filesetname=datafiles,
-      iosize=$iosize,workingset=$workingsethot,random,opennext,directio=$directio
+      iosize=$iosize,workingset=$workingset,random,opennext,directio=$directio
+    flowop hog name=shadowhog,value=$usermode
+    flowop sempost name=shadow-post-lg,value=1,target=lg-block,blocking
+    flowop sempost name=shadow-post-dbwr,value=1,target=dbwr-block,blocking
+    flowop eventlimit name=random-rate
+
+    flowop read name=shadowread,filesetname=datafiles,
+      iosize=$iosize,workingset=$workingset,random,opennext,directio=$directio
     flowop hog name=shadowhog,value=$usermode
     flowop sempost name=shadow-post-lg,value=1,target=lg-block,blocking
     flowop sempost name=shadow-post-dbwr,value=1,target=dbwr-block,blocking

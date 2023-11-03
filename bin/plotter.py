@@ -116,6 +116,15 @@ class Plotter(object):
             pdf_name = '.'.join(outs[0:-1]) + ".pdf"
         pdf_name = os.path.basename(pdf_name)
         return pdf_name
+    
+    fs_key = {
+        "EXT4-dax": 0,
+        "pmfs": 1,
+        "NOVA": 2,
+        "EulerFS": 3,
+        "SoupFS-InPlace": 4,
+        "EulerFS-S": 5,
+    }
 
     def _get_fs_list(self, media, bench, iomode):
         # get args
@@ -131,7 +140,7 @@ class Plotter(object):
                     key = f.split(".")[0].split(":")
                     if key[0] == media and key[2] == bench and key[3] == iomode:
                         fs_set.add(key[1])
-            return sorted(list(fs_set))
+            return sorted(list(fs_set), key=lambda x: self.fs_key[x])
         else:
             data = self.parser.search_data([media, "*", bench, "*", iomode])
             fs_set = set()
@@ -141,7 +150,7 @@ class Plotter(object):
                     fs_set.add(fs)
             #remove tmpfs - to see more acurate comparision between storage fses
     #        fs_set.remove("tmpfs");
-            return sorted(list(fs_set))
+            return sorted(list(fs_set), key=lambda x: self.fs_key[x])
         
     def _gen_pdf(self, gp_file):
         subprocess.call("cd %s; gnuplot %s" %
@@ -236,6 +245,18 @@ class Plotter(object):
 
         def _get_data_file(fs):
             return "%s:%s:%s:%s.dat" % (media, fs, bench, iomode)
+
+        def label_fs(fs):
+            if fs == "EulerFS-S":
+                return "BorschFS"
+            elif fs == "EulerFS":
+                return "SoupFS"
+            elif fs == "pmfs":
+                return "PMFS"
+            elif fs == "EXT4-dax":
+                return "EXT4-DAX"
+            else:
+                return fs
         
         fs_list = []
 
@@ -291,14 +312,21 @@ class Plotter(object):
                     [231, 138, 195], [166,216,84], [255, 217, 47],
                     [229, 196, 148], [179, 179, 179]])
             c  = c/255
-            markers = ['H', '^', '>', 'D', 'o', 's']
+            markers = ['H', '^', '>', 'D', 'o', 's', 'p', 'x']
             hat = ['|//','-\\\\','|\\\\','-//',"--","\\\\",'//',"xx"]
             
             # gen gp file
             if len(benches) == 4:
                 plt.rcParams.update({'font.size': 12})
                 fig, axs = plt.subplots(2, 2, figsize=(8, 6))
+            elif "YCSB" in benches and "TPC-C" in benches:
+                fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 3), gridspec_kw={'width_ratios': [1, 0.2]})
+            elif "YCSB" in benches:
+                fig, axs = plt.subplots(1, len(benches), figsize=(8 * len(benches), 3))
+            # elif "TPC-C" in benches:
+            #     fig, axs = plt.subplots(1, len(benches), figsize=(3 * len(benches), 3))
             else:  
+                plt.rcParams.update({'font.size': 12})
                 fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 3))
             for i, bench in enumerate(benches):
                 fs_list = self._get_fs_list(media, bench, iomode)
@@ -324,46 +352,57 @@ class Plotter(object):
                 else:
                     size = len(dat[0])
 
+                # barplot
                 x = np.arange(size)
-                total_width = 0.9 # 0.9
+                if bench == "YCSB":
+                    total_width = 0.8 # 0.9
+                elif "fio" in bench:
+                    total_width = 0.6
+                elif bench == "TPC-C":
+                    total_width = 0.4
+                else:
+                    total_width = 0.9            
                 n = len(fs_list)
                 width = total_width / n
                 x = x - (total_width - width) / 2
 
+                padding = 0.0
+                if bench != "YCSB":
+                    padding = 0.2
+
                 if np.any(dat[0] % 1 != 0): # skewed, bar plot
                     barplot = True
+                    # print("Benchmark: %s, width: %f" % (bench, width))
                     # with np.printoptions(precision=3, suppress=True):
                     #     print(bench, fs, dat)
 
                 if barplot:
-                    ax.bar(x, dat[1], width=width, edgecolor='black', lw=1.2, color=c[0], hatch=hat[0], label=fs)
+                    ax.bar(x, dat[1], width=width, edgecolor='black', lw=1.2, color=c[0], hatch=hat[0], label=label_fs(fs))
                 else:
-                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=fs, color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
+                    ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=label_fs(fs), color=c[0], marker=markers[0], lw=3, mec='black', markersize=8, alpha=1)
 
                 for j, fs in enumerate(fs_list[1:]):
                     # if np.any(dat[0] % 1 != 0): # skewed, bar plot
                     #     with np.printoptions(precision=3, suppress=True):
                     #         print(bench, fs, dat)
 
-                    label_fs = fs
-                    if fs == "EulerFS-S":
-                        label_fs = "BorschFS"
-                    elif fs == "EulerFS":
-                        label_fs = "SoupFS"
-                    elif fs == "pmfs":
-                        label_fs = "PMFS"
-                    elif fs == "EXT4-dax":
-                        label_fs = "ext4-DAX"
-
                     if barplot:
-                        ax.bar(x + width * (j+1), np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True)[1], width=width, edgecolor='black', lw=1.2, color=c[j+1], hatch=hat[j+1], label=label_fs)
+                        ax.bar(x + width * (j+1), np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True)[1], width=width, edgecolor='black', lw=1.2, color=c[j+1], hatch=hat[j+1], label=label_fs(fs))
                     else:
-                        ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=label_fs, color=c[j+1], marker=markers[j+1], lw=3, mec='black', markersize=8, alpha=1)
+                        ax.plot(*np.loadtxt(os.path.join(self.out_dir, _get_data_file(fs)), unpack=True), label=label_fs(fs), color=c[j+1], marker=markers[j+1], lw=3, mec='black', markersize=8, alpha=1)
                 
                 title = bench.replace("_", " ")
+                if title == "fio zipf sync":
+                    title = "Fio System Calls"
+                elif title == "fio zipf mmap":
+                    title = "Fio Memory Map"
+                title = title.replace("filebench", "Filebench")
+                title = title.replace("fileserver-1k", "Fileserver")
+                title = title.replace("varmail-1k", "Varmail")
+                title = title.replace("oltp", "OLTP")
                 # add (a) (b) (c) (d) before title according to i
-                # if len(benches) == 4:
-                title = "(" + chr(ord('a') + i) + ") " + title
+                if len(benches) > 1:
+                    title = "(" + chr(ord('a') + i) + ") " + title
 
                 ax.set_title(title)
                 ax.grid(axis='y', linestyle='-.')
@@ -372,11 +411,24 @@ class Plotter(object):
                     print("float xticks found")
                     if barplot:
                         names = dat[0].astype(str)
+                        # fio
                         names = np.where(names == "0.1", "uniform", names) # 1.2 means zipf, 0.1 means random, just a symbol, not for zipf parameter
                         names = np.where(names == "1.2", "skewed", names)
-                        
+                        # YCSB Load A  ,Run A  ,Run B   ,Run C   ,Run D   ,Load E  ,Run E  ,Run F
+                        names = np.where(names == "5.1", "LoadA", names)
+                        names = np.where(names == "5.2", "RunA", names)
+                        names = np.where(names == "5.3", "RunB", names)
+                        names = np.where(names == "5.4", "RunC", names)
+                        names = np.where(names == "5.5", "RunD", names)
+                        names = np.where(names == "5.6", "LoadE", names)
+                        names = np.where(names == "5.7", "RunE", names)
+                        names = np.where(names == "5.8", "RunF", names)
+                        # TPC-C
+                        names = np.where(names == "6.1", "TPC-C", names)
+
                         ax.set_xticks(range(size))
-                        ax.set_xticklabels(names)
+                        if size != 1:
+                            ax.set_xticklabels(names)
                     else: # disabled
                         ax.set_xticks(dat[0].astype(float))
                         ax.set_xlabel("Zipf parameter")
@@ -385,11 +437,17 @@ class Plotter(object):
                     ax.set_xlabel("# Threads")
                 if "fio" in bench:
                     ax.set_ylabel("MiB/sec")
-                elif "silversearcher" in bench:
+                elif "silversearcher" in bench or bench == "YCSB":
                     ax.set_ylabel("K ops/sec")
+                elif bench == "TPC-C":
+                    ax.set_ylabel("Transactions/sec")
                 else:
                     ax.set_ylabel("M ops/sec")
-
+                if barplot:
+                    # # print xrange of ax
+                    # print(bench, ax.get_xlim())
+                    # add padding to x axis
+                    ax.set_xlim([ax.get_xlim()[0] - padding, ax.get_xlim()[1] + padding])
                 handles, labels = ax.get_legend_handles_labels()
 
             fig.legend(handles, labels, loc=9, ncol=len(fs_list), frameon=False)
@@ -400,9 +458,9 @@ class Plotter(object):
                 fig.subplots_adjust(top=0.8)
 
             save_name = "_".join(benches)
-            plt.savefig(os.path.join(self.out_dir, "%s.png" % save_name))
+            plt.savefig(os.path.join(self.out_dir, "%s.png" % save_name), bbox_inches='tight')
             # plt.savefig(os.path.join(self.out_dir, "%s.svg" % save_name))
-            plt.savefig(os.path.join(self.out_dir, "%s.pdf" % save_name))
+            plt.savefig(os.path.join(self.out_dir, "%s.pdf" % save_name), bbox_inches='tight')
             plt.close()
 
     def _plot_util_data(self, media, ncore, bench, iomode):
@@ -476,7 +534,8 @@ class Plotter(object):
                        ["MWRL", "MWRM"],
                        ["DWOL", "DWOM", "MWCL", "MWCM"],
                        ["filebench_varmail", "filebench_fileserver", "filebench_webproxy", "filebench_fileserver-1k"],
-                       ["filebench_varmail", "filebench_oltp", "filebench_fileserver", "filebench_webserver", "filebench_webproxy", "filebench_fileserver-1k"]]
+                       ["filebench_oltp", "filebench_varmail-1k", "filebench_fileserver-1k"],
+                       ["YCSB", "TPC-C"]]
         
         self.out_dir  = out_dir
         subprocess.call("mkdir -p %s" % self.out_dir, shell=True)
