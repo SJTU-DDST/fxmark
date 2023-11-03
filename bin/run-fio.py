@@ -75,6 +75,8 @@ class FIO(object):
             zipf = True
             if self.zipf == 0.1:
                 zipf = False # 0.1 means random, just a symbol, not for zipf parameter
+            if self.zipf == 1.2:
+                self.zipf = 0.99
 
             if zipf:
                 cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
