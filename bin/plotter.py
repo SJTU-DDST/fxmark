@@ -123,7 +123,9 @@ class Plotter(object):
         "NOVA": 2,
         "EulerFS": 3,
         "SoupFS-InPlace": 4,
-        "EulerFS-S": 5,
+        "BorschFS-clwb": 5,
+        "BorschFS-ntstore": 6,
+        "EulerFS-S": 7,
     }
 
     def _get_fs_list(self, media, bench, iomode):
@@ -140,7 +142,7 @@ class Plotter(object):
                     key = f.split(".")[0].split(":")
                     if key[0] == media and key[2] == bench and key[3] == iomode:
                         fs_set.add(key[1])
-            return sorted(list(fs_set), key=lambda x: self.fs_key[x])
+            return sorted(list(fs_set), key=lambda x: self.fs_key.get(x, 6))
         else:
             data = self.parser.search_data([media, "*", bench, "*", iomode])
             fs_set = set()
@@ -150,7 +152,7 @@ class Plotter(object):
                     fs_set.add(fs)
             #remove tmpfs - to see more acurate comparision between storage fses
     #        fs_set.remove("tmpfs");
-            return sorted(list(fs_set), key=lambda x: self.fs_key[x])
+            return sorted(list(fs_set), key=lambda x: self.fs_key.get(x, 6))
         
     def _gen_pdf(self, gp_file):
         subprocess.call("cd %s; gnuplot %s" %
@@ -248,7 +250,7 @@ class Plotter(object):
 
         def label_fs(fs):
             if fs == "EulerFS-S":
-                return "BorschFS"
+                return "FusionFS"
             elif fs == "EulerFS":
                 return "SoupFS"
             elif fs == "pmfs":
@@ -408,7 +410,7 @@ class Plotter(object):
                 ax.grid(axis='y', linestyle='-.')
 
                 if np.any(dat[0] % 1 != 0):
-                    print("float xticks found")
+                    print("float xticks found for %s" % bench)
                     if barplot:
                         names = dat[0].astype(str)
                         # fio
@@ -429,6 +431,8 @@ class Plotter(object):
                         ax.set_xticks(range(size))
                         if size != 1:
                             ax.set_xticklabels(names)
+                        else:
+                            ax.set_xticklabels([names])
                     else: # disabled
                         ax.set_xticks(dat[0].astype(float))
                         ax.set_xlabel("Zipf parameter")

@@ -8,6 +8,7 @@ import tempfile
 import optparse
 import time
 import pdb
+import re
 from os.path import join
 
 CUR_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -19,11 +20,37 @@ class FIO(object):
 
     def __init__(self, type_, ncore_, duration_, root_,
                  profbegin_, profend_, proflog_):
+        def extract_blocksize(input_string):
+            match = re.search(r'blocksize_(\d+)', input_string)
+            if match:
+                return int(match.group(1))
+            else:
+                return None
+        def extract_filesize(input_string):
+            match = re.search(r'filesize_(\d+)', input_string)
+            if match:
+                return int(match.group(1))
+            else:
+                return None
+            
         self.config = None
         self.bench_out = None
         # take configuration parameters
         self.workload = type_
-        self.ncore = 20 # int(ncore_) # we fix the ncore to 8, so that we can use ncore for zipf
+        self.ncore = 20 # int(ncore_)
+        
+        self.bs = extract_blocksize(self.workload)
+        if self.bs is None:
+            self.bs = 4096
+
+        self.size = extract_filesize(self.workload) # in MB
+        if self.size is None:
+            self.size = 64
+
+        self.rw = "randwrite"
+        if "sequential" in self.workload:
+            self.rw = "write"
+
         self.duration = int(duration_)
 
         self.ZIPF = not float(ncore_).is_integer()
@@ -73,19 +100,19 @@ class FIO(object):
     def _run_fio(self):
         with tempfile.NamedTemporaryFile(delete=False) as self.bench_out: # --fsync=1
             zipf = True
-            if self.zipf == 0.1:
+            if not self.ZIPF or self.zipf == 0.1:
                 zipf = False # 0.1 means random, just a symbol, not for zipf parameter
             if self.zipf == 1.2:
                 self.zipf = 0.99
 
             if zipf:
-                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
+                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=%s --random_distribution=zipf:%s --numjobs=%s --bs=%d --size=%dm --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.rw, self.zipf, self.ncore, self.bs, self.size, self.duration, self.root)
                 if "sync" in self.workload:#--fsync=256--rw=randwrite --random_distribution=zipf:%s 
-                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --random_distribution=zipf:%s --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.zipf, self.ncore, self.duration, self.root)
+                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=%s --random_distribution=zipf:%s --numjobs=%s --bs=%d --size=%dm --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.rw, self.zipf, self.ncore, self.bs, self.size, self.duration, self.root)
             else:# --ramp_time=120
-                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=randwrite --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.ncore, self.duration, self.root)
+                cmd = "sudo fio --name=rand_write_4k --ioengine=mmap --fdatasync=1 --rw=%s --numjobs=%s --bs=%d --size=%dm --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.rw, self.ncore, self.bs, self.size, self.duration, self.root)
                 if "sync" in self.workload:#--fsync=256--rw=randwrite --random_distribution=zipf:%s 
-                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=randwrite --numjobs=%s --bs=4k --size=64m --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.ncore, self.duration, self.root)
+                    cmd = "sudo fio --name=rand_write_4k --ioengine=sync --rw=%s --numjobs=%s --bs=%d --size=%dm --runtime=%s --ramp_time=30 --time_based=1 --gtod_reduce=1 --group_reporting=1 --directory=%s/" % (self.rw, self.ncore, self.bs, self.size, self.duration, self.root)
             p = self._exec_cmd(cmd, subprocess.PIPE)
             while True:
                 for l in p.stdout.readlines():
@@ -148,6 +175,12 @@ class FIO(object):
         self._exec_cmd("echo \'%s\' >> %s" % (config_str, self.config.name)).wait()
 
     def _exec_cmd(self, cmd, out=None):
+        # write cmd to a log file
+        # with open("./fio-cmd.txt", "a") as f:
+        #     f.write(cmd)
+        #     f.write("\n")
+        # execute cmd
+
         p = subprocess.Popen(cmd, shell=True, stdout=out, stderr=out)
         return p
 

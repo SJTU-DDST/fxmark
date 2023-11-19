@@ -116,6 +116,23 @@ class Runner(object):
             # # fio 
             # "fio_zipf_mmap", # mmap
             # "fio_zipf_sync",
+
+            # test io size
+            # "fio_sync_blocksize_256",
+            # "fio_sync_blocksize_64",
+            # "fio_sync_blocksize_8_filesize_1024m", 
+            # "fio_sync_blocksize_64_filesize_6144m", 
+
+            # "fio_sync_blocksize_8_filesize_1024m_sequential",
+            # "fio_sync_blocksize_64_filesize_1024m_sequential",
+            # "fio_sync_blocksize_128_filesize_1024m_sequential",
+            # "fio_sync_blocksize_128_filesize_1024m",
+            # "fio_sync_blocksize_256_filesize_1024m_sequential",
+            # "fio_sync_blocksize_256_filesize_1024m",
+            # "fio_sync_blocksize_512_filesize_1024m_sequential",
+            # "fio_sync_blocksize_512_filesize_1024m",
+            # "fio_sync_blocksize_1024_filesize_1024m_sequential",
+            # "fio_sync_blocksize_1024_filesize_1024m",
             # "dbench_client",
         ]
         # self.BENCH_TYPES   = [
