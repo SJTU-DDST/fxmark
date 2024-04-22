@@ -321,6 +321,8 @@ class Plotter(object):
             if len(benches) == 4:
                 plt.rcParams.update({'font.size': 12})
                 fig, axs = plt.subplots(2, 2, figsize=(8, 6))
+            elif "filebench_varmail-1k" in benches:
+                fig, axs = plt.subplots(1, len(benches), figsize=(3 * len(benches), 3))
             elif "YCSB" in benches and "TPC-C" in benches:
                 fig, axs = plt.subplots(1, len(benches), figsize=(4 * len(benches), 3), gridspec_kw={'width_ratios': [1, 0.2]})
             elif "YCSB" in benches:

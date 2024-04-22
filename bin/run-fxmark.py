@@ -27,9 +27,9 @@ def catch_ctrl_C(sig, frame):
 class Runner(object):
     # media path
     LOOPDEV = "/dev/loop7"
-    NVMEDEV = "/dev/pmem1.3"
-    HDDDEV  = "/dev/pmem1.3"
-    SSDDEV  = "/dev/pmem1.3"
+    NVMEDEV = "/dev/pmem0"
+    HDDDEV  = "/dev/pmem0"
+    SSDDEV  = "/dev/pmem0"
 
     # test core granularity
     CORE_FINE_GRAIN   = 0
@@ -50,14 +50,14 @@ class Runner(object):
 
         # bench config
         self.DISK_SIZE     = "32G"
-        self.DURATION      = 30 # 30 seconds
+        self.DURATION      = 1 # 30 seconds
         self.DIRECTIOS     = ["bufferedio", "directio"]  # enable directio except tmpfs -> nodirectio 
         # self.MEDIA_TYPES   = ["ssd", "hdd", "nvme", "mem"]
         self.MEDIA_TYPES   = ["nvme", "mem"]
         # self.ncores = [8,12]
         # self.ncores = [1,2,4,8,12]
-        self.ncores = [1,2,4,8,12,16,20,24,28] # fxmark & filebench
-        # self.ncores = [28]
+        # self.ncores = [1,2,4,8,12,16,20,24,28] # fxmark & filebench
+        self.ncores = [28]
         # self.ncores      = [1,7,14,21,28,35,42,49,56] 
         # self.ncores      = [1,2,4,8,16]
         # self.ncores      = [1,4,8,12,16]
@@ -74,8 +74,8 @@ class Runner(object):
                                 # "pmfs", # require manual insmod
                                 # "NOVA", # require manual insmod
                                 "EulerFS-S",
-                                "EulerFS", 
-                                "EXT4-dax",
+                                # "EulerFS", 
+                                # "EXT4-dax",
                                 # "tmpfs", # TODO: add EXT4, EXT4-DJ
 
                                 
@@ -87,8 +87,8 @@ class Runner(object):
             ]
         self.BENCH_TYPES   = [
             # # file
-            # "DWOL",
-            # "DWOM",
+            "DWOL",
+            # "DWOM", # requires 30s duration to extend the file and stabilize
             # "DRBH",
             # "DRBM",
             # "DRBL",
@@ -106,9 +106,11 @@ class Runner(object):
             # # filebench
             # "filebench_varmail",
             # "filebench_varmail-1k",
-            "filebench_fileserver",
-            "filebench_fileserver-1k",
-            "filebench_oltp", # can't run on SplitFS
+
+            # "filebench_fileserver",
+            # "filebench_fileserver-1k",
+            # "filebench_oltp", # can't run on SplitFS
+
             # "filebench_webproxy",
             # "filebench_webserver",
             # "filebench_randomwrite",
@@ -357,7 +359,8 @@ class Runner(object):
         self.exec_cmd(cmd, self.dev_null)
 
     def set_cpus(self, ncore):
-        # return # set_cpus crash with nova and pmfs, ok for other filesystems
+        print("SET_CPUS DISABLED!!!")
+        return # set_cpus crash with nova and pmfs, ok for other filesystems
         if self.active_ncore == ncore:
             return
         self.active_ncore = ncore
