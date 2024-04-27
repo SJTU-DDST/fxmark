@@ -137,8 +137,6 @@ class PerfMon(object):
 
         pickle_in = os.path.normpath(
             os.path.join(self.DIR, "%s.ipmctl.pickle" % self.FILE))
-        txt_out = os.path.normpath(
-            os.path.join(self.DIR, "%s.ipmctl.txt" % self.FILE))
         p = self._exec_cmd("sudo ipmctl show -dimm -performance", subprocess.PIPE)
         lines = []
         data = None
@@ -290,7 +288,7 @@ if __name__ == "__main__":
     # XXX. option parsing for level, ldir, and lfile
 
     # get command
-    if len(sys.argv) is not 2:
+    if len(sys.argv) != 2:
         exit(1)
     cmd = sys.argv[1]
 

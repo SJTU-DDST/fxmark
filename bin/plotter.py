@@ -68,6 +68,9 @@ class Plotter(object):
         for f in os.listdir("./out/"):
             if f.endswith(".dat"):
                 key = f.split(".")[0].split(":")
+                if key[0] != "nvme":
+                    key[1] = key[1] + "-" + key[0]
+                    key[0] = "nvme"
                 for (i, k) in enumerate(key):
                     try:
                         all_config[i]
@@ -140,6 +143,9 @@ class Plotter(object):
             for f in os.listdir("./out/"):
                 if f.endswith(".dat"):
                     key = f.split(".")[0].split(":")
+                    if key[0] != "nvme":
+                        key[1] = key[1] + "-" + key[0]
+                        key[0] = "nvme"
                     if key[0] == media and key[2] == bench and key[3] == iomode:
                         fs_set.add(key[1])
             return sorted(list(fs_set), key=lambda x: self.fs_key.get(x, 6))
@@ -246,6 +252,8 @@ class Plotter(object):
             return "with lp ps 0.5"
 
         def _get_data_file(fs):
+            if "pm-array" in fs:
+                return "pm-array:%s:%s:%s.dat" % (fs.replace("-pm-array", ""), bench, iomode)
             return "%s:%s:%s:%s.dat" % (media, fs, bench, iomode)
 
         def label_fs(fs):
@@ -307,6 +315,7 @@ class Plotter(object):
                 # check if there are data
                 fs_list = self._get_fs_list(media, bench, iomode)
                 if fs_list == []:
+                    # print(media, bench, iomode)
                     print("No data for %s" % bench)
                     return
             # color
@@ -439,7 +448,11 @@ class Plotter(object):
                         ax.set_xticks(dat[0].astype(float))
                         ax.set_xlabel("Zipf parameter")
                 else:
-                    ax.set_xticks(dat[0].astype(int))
+                    try: 
+                        ax.set_xticks(dat[0].astype(int))
+                    except:
+                        print("Error: %s" % bench)
+                        print(dat)
                     ax.set_xlabel("# Threads")
                 if "fio" in bench:
                     ax.set_ylabel("MiB/sec")

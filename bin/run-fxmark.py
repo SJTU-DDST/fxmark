@@ -364,7 +364,7 @@ class Runner(object):
         if self.active_ncore == ncore:
             return
         self.active_ncore = ncore
-        if ncore is 0:
+        if ncore == 0:
             ncores = "all"
         else:
             ncores = ','.join(map(lambda c: str(c), cpupol.seq_cores[0:ncore]))
@@ -405,7 +405,7 @@ class Runner(object):
             os.environ.pop('NVP_TREE_FILE', None)
 
             p = self.exec_cmd("sudo umount " + where, self.dev_null)
-            if p.returncode is not 0:
+            if p.returncode != 0:
                 break
         (umount_hook, self.umount_hook) = (self.umount_hook, [])
         map(lambda hook: hook(), umount_hook);
@@ -469,16 +469,16 @@ class Runner(object):
                           + " " + self.HOWTO_MKFS.get(fs, "")
                           + " " + dev_path,
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         p = self.exec_cmd(' '.join(["sudo mount -t", fs, "-o dax", # for ext4
                                     dev_path, mnt_path]),
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         p = self.exec_cmd("sudo chmod 777 " + mnt_path,
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         return True
 
@@ -489,17 +489,17 @@ class Runner(object):
 
         p = self.exec_cmd("sudo rmmod eulerfs", self.dev_null)
         p = self.exec_cmd("sudo insmod /home/congyong/eulerfs-plain.ko", self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
 
         p = self.exec_cmd(' '.join(["sudo mount -t eulerfs", "-o init",
                                     dev_path, mnt_path]),
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         p = self.exec_cmd("sudo chmod 777 " + mnt_path,
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         return True
     
@@ -510,17 +510,17 @@ class Runner(object):
 
         p = self.exec_cmd("sudo rmmod eulerfs", self.dev_null)  # if not already compiled in kernel
         p = self.exec_cmd("sudo insmod /home/congyong/eulerfs/eulerfs.ko", self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         # dev_path = "/dev/pmem0" # test on dram
         p = self.exec_cmd(' '.join(["sudo mount -t eulerfs", "-o init",
                                     dev_path, mnt_path]),
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         p = self.exec_cmd("sudo chmod 777 " + mnt_path,
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         return True
     
@@ -532,11 +532,11 @@ class Runner(object):
         p = self.exec_cmd(' '.join(["sudo mount -t", fs, "-o init",
                                     dev_path, mnt_path]),
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         p = self.exec_cmd("sudo chmod 777 " + mnt_path,
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         return True
 
@@ -549,20 +549,20 @@ class Runner(object):
                           + " " + self.HOWTO_MKFS.get(fs, "")
                           + " " + dev_path,
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         p = self.exec_cmd("sudo tune2fs -O ^has_journal %s" % dev_path,
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         p = self.exec_cmd(' '.join(["sudo mount -t ext4",
                                     dev_path, mnt_path]),
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         p = self.exec_cmd("sudo chmod 777 " + mnt_path,
                           self.dev_null)
-        if p.returncode is not 0:
+        if p.returncode != 0:
             return False
         return True
 
@@ -633,12 +633,12 @@ class Runner(object):
             os.path.join(self.log_dir,
                          '.'.join([media, fs, bench, str(nfg), "pm"])))
         (bin, type) = self.get_bin_type(bench)
-        directio = '1' if dio is "directio" else '0'
+        directio = '1' if dio == "directio" else '0'
         if fs == "EXT4-dax" or fs == "ext4":
             directio = '1'
 
-        if directio is '1':
-            if fs is "tmpfs" or "EulerFS" in fs:
+        if directio == '1':
+            if fs == "tmpfs" or "EulerFS" in fs:
                 print("# INFO: DirectIO under tmpfs & eulerfs disabled by default")
                 directio='0';
             else: 
